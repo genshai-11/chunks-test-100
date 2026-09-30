@@ -87,16 +87,16 @@ export const Navbar: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Center: Customer-Facing Campaign Navigation Links (Compact Segmented Tabs) */}
+        {/* Center: Customer-Facing Campaign Navigation Links (Compact Sleek Segmented Tabs) */}
         {currentView !== 'admin' ? (
-          <nav className="hidden md:flex items-center p-1 bg-slate-100/90 border border-[rgba(10,10,10,0.08)] rounded-full text-[12px] font-medium tracking-tight gap-1">
+          <nav className="hidden md:flex items-center p-0.5 bg-[#f4f4f5] border border-black/[0.06] rounded-full text-[11px] font-medium tracking-tight gap-0.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
             <button
               type="button"
               onClick={() => scrollToSection('booking-form')}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
                 activeSection === 'booking-form'
-                  ? 'bg-white text-[#0a0a0a] shadow-xs font-semibold'
-                  : 'text-[#0a0a0a]/65 hover:text-[#0a0a0a] hover:bg-white/60'
+                  ? 'bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
+                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a] hover:bg-white/50'
               }`}
             >
               {lang === 'vi' ? 'Đăng ký' : 'Register'}
@@ -105,10 +105,10 @@ export const Navbar: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => scrollToSection('test-options')}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
                 activeSection === 'test-options'
-                  ? 'bg-white text-[#0a0a0a] shadow-xs font-semibold'
-                  : 'text-[#0a0a0a]/65 hover:text-[#0a0a0a] hover:bg-white/60'
+                  ? 'bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
+                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a] hover:bg-white/50'
               }`}
             >
               Green &amp; Red
@@ -117,10 +117,10 @@ export const Navbar: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => scrollToSection('faq')}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
                 activeSection === 'faq'
-                  ? 'bg-white text-[#0a0a0a] shadow-xs font-semibold'
-                  : 'text-[#0a0a0a]/65 hover:text-[#0a0a0a] hover:bg-white/60'
+                  ? 'bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
+                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a] hover:bg-white/50'
               }`}
             >
               FAQ

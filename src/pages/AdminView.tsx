@@ -42,6 +42,7 @@ import {
 import { generateCandidateEmailContent } from '../utils/candidateEmailTemplate';
 import { ChunkerReferralAnalyticsCard } from '../components/ChunkerReferralAnalyticsCard';
 import { Candidate, Chunker, CandidateStatus } from '../types';
+import { buildReferralUrl, getActiveReferralDomain } from '../utils/referral';
 
 interface Props {
   currentUser: User | null;
@@ -895,7 +896,7 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
 
       {/* Chunker Accounts Table */}
       <div className="border border-[rgba(10,10,10,0.14)] p-6 bg-white space-y-4">
-        <div className="flex items-center justify-between border-b border-[rgba(10,10,10,0.14)] pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(10,10,10,0.14)] pb-4">
           <div>
             <span className="text-[10.5px] uppercase tracking-[0.2em] font-semibold text-[#0a0a0a]/50">
               COMMUNITY DIRECTORY
@@ -903,6 +904,12 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
             <h3 className="text-[18px] font-semibold text-[#0a0a0a] mt-0.5">
               Chunkee Referral Accounts ({chunkers.length})
             </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Domain: {getActiveReferralDomain()}
+            </span>
           </div>
         </div>
 
@@ -914,23 +921,56 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                 <th className="py-2.5 pr-4">Code</th>
                 <th className="py-2.5 pr-4">Secret Token</th>
                 <th className="py-2.5 pr-4">Email</th>
+                <th className="py-2.5 pr-4">Link Giới Thiệu</th>
                 <th className="py-2.5 text-right">Referral Tally</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgba(10,10,10,0.08)]">
-              {chunkers.map((ch) => (
-                <tr key={ch.code} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 pr-4 font-semibold text-[#0a0a0a]">{ch.name}</td>
-                  <td className="py-3 pr-4 font-mono font-bold text-[#c81e16]">{ch.code}</td>
-                  <td className="py-3 pr-4 font-mono text-xs text-[#0a0a0a]/60">
-                    {ch.secretToken || `SEC-${ch.code}`}
-                  </td>
-                  <td className="py-3 pr-4 text-[#0a0a0a]/70 font-mono text-xs">{ch.email}</td>
-                  <td className="py-3 text-right font-mono font-bold tabular-nums text-[#0a0a0a]">
-                    {ch.referralCount || 0}
-                  </td>
-                </tr>
-              ))}
+              {chunkers.map((ch) => {
+                const refLink = buildReferralUrl(ch.code);
+                const isCopied = copiedLink === ch.code;
+                return (
+                  <tr key={ch.code} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 pr-4 font-semibold text-[#0a0a0a]">{ch.name}</td>
+                    <td className="py-3 pr-4 font-mono font-bold text-[#c81e16]">{ch.code}</td>
+                    <td className="py-3 pr-4 font-mono text-xs text-[#0a0a0a]/60">
+                      {ch.secretToken || `SEC-${ch.code}`}
+                    </td>
+                    <td className="py-3 pr-4 text-[#0a0a0a]/70 font-mono text-xs">{ch.email}</td>
+                    <td className="py-3 pr-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(refLink);
+                          setCopiedLink(ch.code);
+                          setTimeout(() => setCopiedLink(null), 2000);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono border transition-all cursor-pointer ${
+                          isCopied
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white hover:bg-slate-100 text-[#0a0a0a] border-[rgba(10,10,10,0.18)]'
+                        }`}
+                        title={refLink}
+                      >
+                        {isCopied ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>Đã chép link</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-[#c81e16]" />
+                            <span>Sao chép link</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+                    <td className="py-3 text-right font-mono font-bold tabular-nums text-[#0a0a0a]">
+                      {ch.referralCount || 0}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

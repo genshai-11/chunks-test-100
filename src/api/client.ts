@@ -5,6 +5,7 @@ import {
 import { Candidate, Chunker, CandidateStatus } from '../types';
 import { sanitizeCandidateForChunker } from '../utils/masking';
 import { INITIAL_CHUNKERS, INITIAL_CANDIDATES } from '../constants/initialData';
+import { buildReferralUrl } from '../utils/referral';
 
 // Public API response
 export interface ReferralValidationResponse {
@@ -81,29 +82,37 @@ export async function apiValidateReferral(code: string): Promise<ReferralValidat
 export async function apiRegisterCandidate(
   data: CandidateRegisterInput
 ): Promise<CandidateRegistrationResponse> {
-  try {
-    const res = await fetch('/api/public/candidates/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+  const res = await fetch('/api/public/candidates/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
 
-    if (res.ok) {
-      return await res.json();
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.message || errData.error || 'Registration failed');
-    }
-  } catch (err: any) {
-    console.warn('Backend API registration error, using safe client receipt:', err);
-    // Strict rule: Response returns ONLY an acknowledgment. Never return list of previous submissions or current target counts.
-    const fakeId = `cand_${Date.now().toString(36)}`;
-    return {
-      success: true,
-      registrationId: fakeId,
-      message: 'Đăng ký thành công! Đội ngũ Chunks sẽ liên hệ qua Zalo/SĐT để xếp lịch.',
-    };
+  const responseData = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const errorMsg = responseData.message || responseData.error || `HTTP ${res.status}: Registration failed`;
+    console.error('[API_REGISTER_ERROR]:', errorMsg);
+    throw new Error(errorMsg);
   }
+
+  return responseData;
+}
+
+export async function apiGetHealth(): Promise<{
+  status: string;
+  dbConnected: boolean;
+  totalCandidatesInDB: number;
+  totalChunkersInDB: number;
+  timestamp: string;
+  emailService?: {
+    configured: boolean;
+    provider: string;
+    details: string;
+  };
+}> {
+  const res = await fetch('/api/health', { cache: 'no-store' });
+  return await res.json();
 }
 
 // ----------------------------------------------------------------------
@@ -159,7 +168,11 @@ export async function apiLookupChunker(identifier: string): Promise<ChunkerLooku
     }
     throw new Error(err.error || err.message || 'Không tìm thấy thông tin Chunkee');
   }
-  return await res.json();
+  const data = await res.json();
+  if (data && data.code) {
+    data.referralLink = buildReferralUrl(data.code, undefined, data.referralLink);
+  }
+  return data;
 }
 
 export const apiLookupChunkee = apiLookupChunker;
@@ -173,6 +186,9 @@ export async function apiRegisterChunkee(input: ChunkeeRegisterInput): Promise<C
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data.error || 'Đăng ký Chunkee không thành công');
+  }
+  if (data && data.code) {
+    data.referralLink = buildReferralUrl(data.code, undefined, data.referralLink);
   }
   return data;
 }
@@ -190,7 +206,11 @@ export async function apiGetChunkerStats(
     throw new Error(err.error || 'Failed to fetch chunker referral stats');
   }
 
-  return await res.json();
+  const data = await res.json();
+  if (data) {
+    data.referralLink = buildReferralUrl(code, undefined, data.referralLink);
+  }
+  return data;
 }
 
 // ----------------------------------------------------------------------
@@ -241,6 +261,7 @@ export async function apiGetAdminCandidates(
 
   const res = await fetch(`/api/admin/candidates?${queryParams.toString()}`, {
     headers: getAdminHeaders(adminEmail),
+    cache: 'no-store',
   });
 
   if (res.status === 403) {

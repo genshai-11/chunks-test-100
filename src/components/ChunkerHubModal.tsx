@@ -12,6 +12,7 @@ import {
   Search,
   Sparkles,
   AlertCircle,
+  Globe,
 } from 'lucide-react';
 import {
   apiLookupChunkee,
@@ -20,6 +21,15 @@ import {
   ChunkeeNotFoundError,
 } from '../api/client';
 import { isValidPhoneNumber, isValidEmailAddress } from '../schemas/validation';
+import {
+  buildReferralUrl,
+  getDomainOptions,
+  getActiveReferralDomain,
+  setActiveReferralDomain,
+  DEFAULT_PRODUCTION_DOMAIN,
+  generateShareInviteMessage,
+  normalizeDomain,
+} from '../utils/referral';
 
 interface Props {
   isOpen: boolean;
@@ -56,6 +66,17 @@ export const ChunkerHubModal: React.FC<Props> = ({
   // Copy states
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState(false);
+
+  // Domain selection state (defaults to chunkstest.ai.studio or active domain, NEVER localhost)
+  const domainOptions = getDomainOptions();
+  const [selectedDomain, setSelectedDomain] = useState<string>(() => getActiveReferralDomain());
+  const [customDomainInput, setCustomDomainInput] = useState('');
+  const [showCustomDomainForm, setShowCustomDomainForm] = useState(false);
+
+  // Resolved clean referral link (never localhost)
+  const activeReferralUrl = chunkeeData
+    ? buildReferralUrl(chunkeeData.code, selectedDomain, chunkeeData.referralLink)
+    : '';
 
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -154,17 +175,20 @@ export const ChunkerHubModal: React.FC<Props> = ({
   };
 
   const handleCopyLink = () => {
-    if (!chunkeeData) return;
-    navigator.clipboard.writeText(chunkeeData.referralLink);
+    if (!activeReferralUrl) return;
+    navigator.clipboard.writeText(activeReferralUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const getShareMessage = () => {
-    if (!chunkeeData) return '';
-    return lang === 'vi'
-      ? `Chào bạn, mình gửi bạn thư mời tham gia kỳ đánh giá 1-on-1 "CHUNKS Test 100" (Lý thuyết MSE - Motion, Sound, Emotion). Bài test 45 phút trực tiếp cùng CiC. Đăng ký qua link riêng của mình tại: ${chunkeeData.referralLink}`
-      : `Hello, here is your exclusive invitation to the 1-on-1 "CHUNKS Test 100" assessment (MSE Theory). 45-minute live session with CiC. Register via my link: ${chunkeeData.referralLink}`;
+    if (!chunkeeData || !activeReferralUrl) return '';
+    return generateShareInviteMessage(
+      chunkeeData.chunkerName,
+      chunkeeData.code,
+      activeReferralUrl,
+      lang
+    );
   };
 
   const handleCopyMessage = () => {
@@ -183,6 +207,15 @@ export const ChunkerHubModal: React.FC<Props> = ({
     link.download = `QR_CHUNKS_${chunkeeData?.code || 'REFERRAL'}.png`;
     link.href = url;
     link.click();
+  };
+
+  const handleSaveCustomDomain = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customDomainInput.trim()) return;
+    const normalized = normalizeDomain(customDomainInput);
+    setSelectedDomain(normalized);
+    setActiveReferralDomain(normalized);
+    setShowCustomDomainForm(false);
   };
 
   if (!isOpen) return null;
@@ -458,13 +491,90 @@ export const ChunkerHubModal: React.FC<Props> = ({
             </div>
 
             {/* Unique Referral Link & Copy */}
-            <div className="space-y-2">
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0a0a0a]/60">
-                {lang === 'vi' ? 'Link Giới Thiệu Của Bạn' : 'Your Unique Referral Link'}
-              </label>
+            <div className="space-y-2.5 p-4 bg-slate-50/80 border border-[rgba(10,10,10,0.14)]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-[0.18em] text-[#0a0a0a]">
+                    {lang === 'vi' ? 'Link Giới Thiệu Của Bạn' : 'Your Unique Referral Link'}
+                  </label>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {selectedDomain.includes('chunkstest.ai.studio')
+                      ? 'chunkstest.ai.studio'
+                      : lang === 'vi'
+                        ? 'Domain Thật'
+                        : 'Real Domain'}
+                  </span>
+                </div>
+
+                {/* Domain Selector Dropdown */}
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <Globe className="w-3.5 h-3.5 text-[#0a0a0a]/60" />
+                  <span className="text-[#0a0a0a]/60 hidden sm:inline">
+                    {lang === 'vi' ? 'Domain:' : 'Domain:'}
+                  </span>
+                  <select
+                    value={selectedDomain}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'CUSTOM') {
+                        setShowCustomDomainForm(true);
+                        setCustomDomainInput(selectedDomain);
+                      } else {
+                        setSelectedDomain(val);
+                        setActiveReferralDomain(val);
+                        setShowCustomDomainForm(false);
+                      }
+                    }}
+                    className="bg-white border border-[rgba(10,10,10,0.2)] text-[#0a0a0a] font-mono text-[11px] px-2 py-0.5 rounded-none cursor-pointer focus:outline-none focus:border-[#c81e16]"
+                  >
+                    <option value={DEFAULT_PRODUCTION_DOMAIN}>
+                      chunkstest.ai.studio (Chính Thức)
+                    </option>
+                    {domainOptions
+                      .filter((opt) => opt.url !== DEFAULT_PRODUCTION_DOMAIN)
+                      .map((opt) => (
+                        <option key={opt.id} value={opt.url}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    <option value="CUSTOM">+ {lang === 'vi' ? 'Tùy chỉnh domain...' : 'Custom domain...'}</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Custom Domain Input Form */}
+              {showCustomDomainForm && (
+                <form
+                  onSubmit={handleSaveCustomDomain}
+                  className="flex items-center gap-2 p-2 bg-white border border-[rgba(10,10,10,0.18)]"
+                >
+                  <input
+                    type="text"
+                    value={customDomainInput}
+                    onChange={(e) => setCustomDomainInput(e.target.value)}
+                    placeholder="VD: https://chunkstest.ai.studio"
+                    className="flex-1 text-[12px] font-mono px-2 py-1 border border-slate-200 focus:outline-none focus:border-[#c81e16]"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1 bg-[#0a0a0a] text-white text-[11px] font-semibold cursor-pointer"
+                  >
+                    {lang === 'vi' ? 'Áp dụng' : 'Apply'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomDomainForm(false)}
+                    className="px-2 py-1 text-[11px] text-[#0a0a0a]/60 hover:text-[#0a0a0a] cursor-pointer"
+                  >
+                    {lang === 'vi' ? 'Hủy' : 'Cancel'}
+                  </button>
+                </form>
+              )}
+
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <div className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-[rgba(10,10,10,0.18)] font-mono text-[13px] text-[#0a0a0a] truncate select-all">
-                  {chunkeeData.referralLink}
+                <div className="flex-1 px-3.5 py-2.5 bg-white border border-[rgba(10,10,10,0.18)] font-mono text-[13px] text-[#0a0a0a] truncate select-all font-semibold">
+                  {activeReferralUrl}
                 </div>
                 <button
                   type="button"
@@ -488,6 +598,12 @@ export const ChunkerHubModal: React.FC<Props> = ({
                   )}
                 </button>
               </div>
+
+              <div className="text-[11px] text-[#0a0a0a]/55 font-light">
+                {lang === 'vi'
+                  ? 'Link luôn được kết nối tự động với domain thật. Ứng viên bấm vào sẽ được chào đón bằng tên bạn.'
+                  : 'Link connects to your verified domain. Candidates will see your personalized invitation banner.'}
+              </div>
             </div>
 
             {/* Dynamic QR Code & Download */}
@@ -497,7 +613,7 @@ export const ChunkerHubModal: React.FC<Props> = ({
                 className="p-3 bg-white border border-[rgba(10,10,10,0.18)] shrink-0 shadow-sm"
               >
                 <QRCodeCanvas
-                  value={chunkeeData.referralLink}
+                  value={activeReferralUrl}
                   size={148}
                   level="H"
                   includeMargin={false}

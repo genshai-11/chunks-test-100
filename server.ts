@@ -15,88 +15,16 @@ import {
 import { maskName, maskPhone, maskEmail, sanitizeCandidateForChunker } from './src/utils/masking';
 import { INITIAL_CHUNKERS, INITIAL_CANDIDATES } from './src/constants/initialData';
 import { Candidate, Chunker, CandidateStatus } from './src/types';
-import nodemailer from 'nodemailer';
-import { generateCandidateEmailContent, CandidateEmailData } from './src/utils/candidateEmailTemplate';
+import { dbService } from './src/db/database';
+import {
+  sendCandidateConfirmationEmail,
+  sendAdminNewCandidateNotification,
+  getEmailProviderStatus,
+} from './src/lib/email';
+import { generateCandidateEmailContent } from './src/utils/candidateEmailTemplate';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Helper to configure SMTP or fallback transporter for server runtime
-function createServerMailTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-  }
-
-  // Built-in JSON fallback transporter for preview/sandbox environments
-  return nodemailer.createTransport({
-    jsonTransport: true,
-  });
-}
-
-/**
- * Dispatches automated confirmation email to candidate confirming their test type and level.
- */
-async function sendAutomatedCandidateConfirmationEmail(candidate: Candidate): Promise<{ success: boolean; messageId: string }> {
-  try {
-    const { subject, html, text } = generateCandidateEmailContent({
-      candidateId: candidate.id || 'N/A',
-      fullName: candidate.fullName,
-      phone: candidate.phone,
-      email: candidate.email,
-      testType: candidate.testType,
-      testLevel: candidate.testLevel,
-      preferredSlots: candidate.preferredSlots,
-      chunkerCode: candidate.chunkerCode,
-      chunkerName: candidate.chunkerName,
-      createdAt: candidate.createdAt,
-    });
-
-    const transporter = createServerMailTransporter();
-    const sender = process.env.NOTIFICATION_FROM_EMAIL || 'chunks.assessment@chunks.edu.vn';
-
-    const info = await transporter.sendMail({
-      from: `"CHUNKS Test 100" <${sender}>`,
-      to: candidate.email,
-      subject,
-      text,
-      html,
-    });
-
-    const messageId = (info as any)?.messageId || `sim_${Date.now()}`;
-    candidate.confirmationEmailSent = true;
-    candidate.confirmationEmailSentAt = new Date().toISOString();
-    candidate.confirmationEmailStatus = 'delivered';
-
-    console.log(
-      `[FIREBASE CLOUD FUNCTION / AUTOMATED DISPATCH] Successfully triggered candidate confirmation email:
-       -> Recipient: ${candidate.email} (${candidate.fullName})
-       -> Test Type: ${candidate.testType}
-       -> Test Level: ${candidate.testLevel}
-       -> Message ID: ${messageId}`
-    );
-
-    return { success: true, messageId };
-  } catch (error: any) {
-    console.error(`[AUTOMATED CONFIRMATION ERROR] Failed to send email to ${candidate.email}:`, error);
-    candidate.confirmationEmailSent = false;
-    candidate.confirmationEmailStatus = 'failed';
-    return { success: false, messageId: '' };
-  }
-}
-
-// In-Memory Database Store for Server instance (initialized with seed data)
-let dbChunkers: Chunker[] = [...INITIAL_CHUNKERS];
-let dbCandidates: Candidate[] = [...INITIAL_CANDIDATES];
 
 // Whitelist of allowed Admin Emails
 const ADMIN_EMAIL_WHITELIST = [
@@ -105,30 +33,6 @@ const ADMIN_EMAIL_WHITELIST = [
   'admin@chunks.edu.vn',
   'operations@chunks.edu.vn',
 ];
-
-// In-Memory Notification Settings Store
-let notificationSettings = {
-  notificationEmails: ['le.ntmkh@gmail.com'],
-  enabled: true,
-  updatedAt: new Date().toISOString(),
-  updatedBy: 'le.ntmkh@gmail.com',
-};
-
-// In-Memory Notification Logs (last 50 dispatches)
-interface NotificationDispatchLog {
-  id: string;
-  recipients: string[];
-  candidateName: string;
-  phone: string;
-  email: string;
-  testType: string;
-  testLevel: string;
-  preferredSlots: string;
-  chunkerCode: string;
-  timestamp: string;
-  status: 'sent' | 'simulated';
-}
-let notificationLogs: NotificationDispatchLog[] = [];
 
 // In-memory rate limiting map: ip -> timestamps[]
 const rateLimitMap = new Map<string, number[]>();
@@ -193,7 +97,38 @@ function adminAuthMiddleware(req: AuthenticatedRequest, res: Response, next: Nex
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', true);
   app.use(express.json());
+
+  // ---------------------------------------------------------------------
+  // [GROUP A: Public / Candidate APIs]
+  // ---------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------
+  // [DIAGNOSTICS & SYSTEM HEALTHCHECK]
+  // ---------------------------------------------------------------------
+
+  /**
+   * GET /api/health
+   * Live database connection status & metrics
+   */
+  app.get('/api/health', (_req: Request, res: Response) => {
+    const health = dbService.getHealth();
+    const emailStatus = getEmailProviderStatus();
+    return res.status(200).json({
+      status: health.status,
+      dbConnected: health.dbConnected,
+      totalCandidatesInDB: health.totalCandidatesInDB,
+      totalChunkersInDB: health.totalChunkersInDB,
+      timestamp: health.timestamp,
+      dbPath: health.dbPath,
+      emailService: {
+        configured: emailStatus.configured,
+        provider: emailStatus.provider,
+        details: emailStatus.details,
+      },
+    });
+  });
 
   // ---------------------------------------------------------------------
   // [GROUP A: Public / Candidate APIs]
@@ -216,9 +151,9 @@ async function startServer() {
 
     const { code } = parseResult.data;
     const cleanCode = code.toUpperCase();
-    const chunker = dbChunkers.find((c) => c.code.toUpperCase() === cleanCode && c.active);
+    const chunker = dbService.getChunkerByCode(cleanCode);
 
-    if (!chunker) {
+    if (!chunker || !chunker.active) {
       return res.status(200).json({
         valid: false,
         chunkerName: null,
@@ -237,13 +172,14 @@ async function startServer() {
   /**
    * POST /api/public/candidates/register
    * Purpose: Submit registration form.
-   * Strict Rule: Response returns ONLY an acknowledgment. Never return list of previous submissions or current target counts.
+   * Real SQL INSERT into persistent database & Async automated confirmation email.
    */
   app.post('/api/public/candidates/register', async (req: Request, res: Response) => {
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
 
     // Anti-Spam Rate Limit Check
     if (!checkRateLimit(clientIp)) {
+      console.warn(`[RATE_LIMIT_BLOCKED] IP ${clientIp} exceeded max registration attempts.`);
       return res.status(429).json({
         success: false,
         error: 'Too Many Requests',
@@ -254,6 +190,7 @@ async function startServer() {
     // Zod Schema Validation
     const parseResult = candidateRegisterSchema.safeParse(req.body);
     if (!parseResult.success) {
+      console.warn('[REGISTRATION_VALIDATION_ERROR]:', parseResult.error.flatten());
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -263,7 +200,7 @@ async function startServer() {
 
     const data = parseResult.data;
     const cleanCode = (data.referralCode || 'DIRECT').toUpperCase();
-    const chunker = dbChunkers.find((c) => c.code.toUpperCase() === cleanCode && c.active);
+    const chunker = dbService.getChunkerByCode(cleanCode);
 
     const candidateId = `cand_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
     const normalizedTestType =
@@ -288,59 +225,72 @@ async function startServer() {
       confirmationEmailSent: false,
       confirmationEmailStatus: 'pending',
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    dbCandidates.unshift(newCandidate);
-
-    if (chunker) {
-      chunker.referralCount = (chunker.referralCount || 0) + 1;
+    // 1. REAL PERSISTENT SQL INSERT INTO DATABASE
+    try {
+      dbService.insertCandidate(newCandidate);
+      console.log(`[DB_INSERT_SUCCESS] Inserted candidate ${candidateId} (${newCandidate.fullName}) into SQLite database.`);
+    } catch (dbErr: any) {
+      console.error('[REGISTRATION_ERROR] Database insertion failed:', dbErr);
+      return res.status(500).json({
+        success: false,
+        error: 'DatabaseError',
+        message: 'Không thể ghi nhận dữ liệu vào cơ sở dữ liệu. Vui lòng thử lại.',
+      });
     }
 
-    // 1. TRIGGER AUTOMATED CONFIRMATION EMAIL TO CANDIDATE
-    // (Firebase Cloud Function / automated email trigger confirming Test Type and Level)
-    await sendAutomatedCandidateConfirmationEmail(newCandidate);
+    // 2. ASYNC NON-BLOCKING EMAIL DISPATCH (Candidate Confirmation & Admin Alert)
+    (async () => {
+      try {
+        console.log(`[EMAIL_TRIGGER] Starting async email dispatch for candidate ${candidateId}...`);
+        const candidateResult = await sendCandidateConfirmationEmail(newCandidate);
+        dbService.updateCandidateEmailStatus(
+          candidateId,
+          candidateResult.success,
+          candidateResult.success ? 'delivered' : 'failed'
+        );
 
-    // Record candidate confirmation dispatch in notification logs for admin visibility
-    const candidateLog: NotificationDispatchLog = {
-      id: `cand_conf_${Date.now()}`,
-      recipients: [newCandidate.email],
-      candidateName: newCandidate.fullName,
-      phone: newCandidate.phone,
-      email: newCandidate.email,
-      testType: newCandidate.testType === 'green' ? 'Green Focus (%c)' : 'Red Improv (%r)',
-      testLevel: newCandidate.testLevel === 'easy' ? 'Dễ (Foundation)' : 'Khó (Advanced)',
-      preferredSlots: newCandidate.preferredSlots,
-      chunkerCode: newCandidate.chunkerCode,
-      timestamp: new Date().toISOString(),
-      status: newCandidate.confirmationEmailSent ? 'sent' : 'simulated',
-    };
-    notificationLogs.unshift(candidateLog);
+        dbService.addNotificationLog({
+          recipients: [newCandidate.email],
+          candidateName: newCandidate.fullName,
+          phone: newCandidate.phone,
+          email: newCandidate.email,
+          testType: newCandidate.testType === 'green' ? 'Green Focus (%c)' : 'Red Improv (%r)',
+          testLevel: newCandidate.testLevel === 'easy' ? 'Dễ (Foundation)' : 'Khó (Advanced)',
+          preferredSlots: newCandidate.preferredSlots,
+          chunkerCode: newCandidate.chunkerCode,
+          status: candidateResult.success ? 'sent' : 'failed',
+          errorDetails: candidateResult.error,
+        });
 
-    // 2. TRIGGER ADMIN NOTIFICATION EMAIL IF CONFIGURED
-    if (notificationSettings.enabled && notificationSettings.notificationEmails.length > 0) {
-      const logEntry: NotificationDispatchLog = {
-        id: `admin_alert_${Date.now()}`,
-        recipients: [...notificationSettings.notificationEmails],
-        candidateName: newCandidate.fullName,
-        phone: newCandidate.phone,
-        email: newCandidate.email,
-        testType: newCandidate.testType === 'green' ? 'Green Focus (%c)' : 'Red Improv (%r)',
-        testLevel: newCandidate.testLevel === 'easy' ? 'Dễ (Foundation)' : 'Khó (Advanced)',
-        preferredSlots: newCandidate.preferredSlots,
-        chunkerCode: newCandidate.chunkerCode,
-        timestamp: new Date().toISOString(),
-        status: 'sent',
-      };
-      notificationLogs.unshift(logEntry);
-      if (notificationLogs.length > 50) notificationLogs.pop();
-      console.log(
-        `[NOTIF DISPATCH] New Candidate registration notification dispatched to: ${notificationSettings.notificationEmails.join(
-          ', '
-        )} | Candidate: ${newCandidate.fullName} (${newCandidate.testType} - Level: ${newCandidate.testLevel})`
-      );
-    }
+        // Trigger Admin notification if configured
+        const notifSettings = dbService.getNotificationSettings();
+        if (notifSettings.enabled && notifSettings.notificationEmails.length > 0) {
+          const adminResult = await sendAdminNewCandidateNotification(
+            newCandidate,
+            notifSettings.notificationEmails
+          );
+          dbService.addNotificationLog({
+            recipients: notifSettings.notificationEmails,
+            candidateName: newCandidate.fullName,
+            phone: newCandidate.phone,
+            email: newCandidate.email,
+            testType: newCandidate.testType === 'green' ? 'Green Focus (%c)' : 'Red Improv (%r)',
+            testLevel: newCandidate.testLevel === 'easy' ? 'Dễ (Foundation)' : 'Khó (Advanced)',
+            preferredSlots: newCandidate.preferredSlots,
+            chunkerCode: newCandidate.chunkerCode,
+            status: adminResult.success ? 'sent' : 'failed',
+            errorDetails: adminResult.error,
+          });
+        }
+      } catch (emailErr: any) {
+        console.error('[EMAIL_ASYNC_ERROR] Background email sending encountered unexpected failure:', emailErr);
+      }
+    })();
 
-    // STRICT ISOLATION: Never leak database counts or records in receipt
+    // 3. IMMEDIATE SUCCESS RESPONSE TO CLIENT (Never block HTTP response on email)
     return res.status(201).json({
       success: true,
       registrationId: candidateId,
@@ -369,11 +319,64 @@ async function startServer() {
 
     let codeCandidate = `${base}2026`;
     let counter = 1;
-    while (dbChunkers.some((c) => c.code.toUpperCase() === codeCandidate.toUpperCase())) {
+    while (dbService.getChunkerByCode(codeCandidate)) {
       codeCandidate = `${base}${counter}2026`;
       counter++;
     }
     return codeCandidate;
+  };
+
+  /**
+   * Helper: Resolves the canonical public base URL for referral links.
+   * Priority:
+   * 1. APP_URL env variable (if non-localhost)
+   * 2. Reverse proxy headers: x-forwarded-host & x-forwarded-proto
+   * 3. Browser headers: origin or referer (if non-localhost)
+   * 4. Request Host (if non-localhost)
+   * 5. Default production domain: https://chunkstest.ai.studio
+   */
+  const getBaseUrl = (req: Request): string => {
+    // 1. Environment variable override
+    const envUrl = process.env.APP_URL?.trim();
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      return envUrl.replace(/\/+$/, '');
+    }
+
+    // 2. Google Cloud Run / AI Studio reverse proxy headers
+    const xForwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0].trim();
+    const xForwardedProto = (req.headers['x-forwarded-proto'] as string | undefined) || 'https';
+    if (xForwardedHost && !xForwardedHost.includes('localhost') && !xForwardedHost.includes('127.0.0.1')) {
+      return `${xForwardedProto}://${xForwardedHost}`;
+    }
+
+    // 3. Origin header sent by browser during client-side fetch
+    const origin = req.headers['origin'] as string | undefined;
+    if (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+      return origin.replace(/\/+$/, '');
+    }
+
+    // 4. Referer header
+    const referer = req.headers['referer'] as string | undefined;
+    if (referer) {
+      try {
+        const u = new URL(referer);
+        if (!u.hostname.includes('localhost') && !u.hostname.includes('127.0.0.1')) {
+          return u.origin.replace(/\/+$/, '');
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 5. Host header
+    const host = req.get('host');
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1') && !host.startsWith('0.0.0.0')) {
+      const proto = req.secure || xForwardedProto === 'https' ? 'https' : (req.protocol || 'https');
+      return `${proto}://${host}`;
+    }
+
+    // 6. Canonical official production domain
+    return 'https://chunkstest.ai.studio';
   };
 
   /**
@@ -392,12 +395,12 @@ async function startServer() {
       });
     }
 
-    const host = req.get('host') || 'chunks.edu.vn';
-    const protocol = req.protocol || 'https';
+    const baseUrl = getBaseUrl(req);
     const digitsOnly = cleanQuery.replace(/\D/g, '');
 
     // 1. Check existing chunker/chunkee by code, email, or phone
-    const chunker = dbChunkers.find((c) => {
+    const chunkers = dbService.getChunkers();
+    const chunker = chunkers.find((c) => {
       if (c.code.toUpperCase() === cleanQuery.toUpperCase()) return true;
       if (c.email.toLowerCase() === cleanQuery.toLowerCase()) return true;
       if (digitsOnly.length >= 9 && c.phone && c.phone.replace(/\D/g, '').endsWith(digitsOnly.slice(-9))) return true;
@@ -412,14 +415,15 @@ async function startServer() {
       });
     }
 
-    // Real candidates registered under this code
-    const referredCandidates = dbCandidates.filter(
-      (c) => c.chunkerCode.toUpperCase() === chunker.code.toUpperCase()
-    );
+    // Real candidates registered under this code from persistent SQLite database
+    const { candidates: referredCandidates } = dbService.getCandidates({
+      search: chunker.code,
+      limit: 100,
+    });
 
     const greenTestCount = referredCandidates.filter((c) => c.testType === 'green').length;
     const redTestCount = referredCandidates.filter((c) => c.testType === 'red').length;
-    const referralLink = `${protocol}://${host}/?ref=${chunker.code}`;
+    const referralLink = `${baseUrl}/?ref=${chunker.code}`;
 
     // Masked candidate list for transparency
     const sanitizedCandidates = referredCandidates.map((c) => sanitizeCandidateForChunker(c));
@@ -476,19 +480,17 @@ async function startServer() {
       });
     }
 
-    const host = req.get('host') || 'chunks.edu.vn';
-    const protocol = req.protocol || 'https';
+    const baseUrl = getBaseUrl(req);
 
     // Check if Chunkee already exists by email
-    let existing = dbChunkers.find(
+    const chunkers = dbService.getChunkers();
+    let existing = chunkers.find(
       (c) => c.email.toLowerCase() === cleanEmail || (cleanPhone && c.phone === cleanPhone)
     );
 
     if (existing) {
-      const referralLink = `${protocol}://${host}/?ref=${existing.code}`;
-      const referredCandidates = dbCandidates.filter(
-        (c) => c.chunkerCode.toUpperCase() === existing!.code.toUpperCase()
-      );
+      const referralLink = `${baseUrl}/?ref=${existing.code}`;
+      const { candidates: referredCandidates } = dbService.getCandidates({ search: existing.code, limit: 100 });
       return res.status(200).json({
         success: true,
         found: true,
@@ -510,7 +512,7 @@ async function startServer() {
     // Determine code
     let assignedCode = '';
     if (cleanCustomCode && /^[A-Za-z0-9_-]{3,20}$/.test(cleanCustomCode)) {
-      if (!dbChunkers.some((c) => c.code.toUpperCase() === cleanCustomCode)) {
+      if (!dbService.getChunkerByCode(cleanCustomCode)) {
         assignedCode = cleanCustomCode;
       }
     }
@@ -518,22 +520,14 @@ async function startServer() {
       assignedCode = generateChunkeeCode(cleanName);
     }
 
-    const newChunkee: Chunker = {
-      id: `chunkee-${Date.now()}`,
+    const newChunkee = dbService.createChunker({
       name: cleanName,
       code: assignedCode,
       email: cleanEmail,
-      phone: cleanPhone,
-      secretToken: `SEC-${assignedCode}`,
-      active: true,
-      referralCount: 0,
-      createdAt: new Date().toISOString(),
       notes: 'Registered via Chunkee Hub Gateway',
-    };
+    });
 
-    dbChunkers.push(newChunkee);
-
-    const referralLink = `${protocol}://${host}/?ref=${newChunkee.code}`;
+    const referralLink = `${baseUrl}/?ref=${newChunkee.code}`;
 
     return res.status(201).json({
       success: true,
@@ -542,7 +536,7 @@ async function startServer() {
       chunkerName: newChunkee.name,
       code: newChunkee.code,
       email: newChunkee.email,
-      phone: newChunkee.phone,
+      phone: cleanPhone,
       referralLink,
       totalReferred: 0,
       breakdown: {
@@ -557,25 +551,25 @@ async function startServer() {
   app.post('/api/chunkee/register', handleChunkeeRegister);
 
   /**
-   * GET /api/chunker/stats?code={code}&token={secret_token}
+   * GET /api/chunker/stats?code={code}
    * Backward-compatible Chunker stats route
    */
   app.get('/api/chunker/stats', (req: Request, res: Response) => {
     const rawCode = (req.query.code as string) || '';
     const cleanCode = rawCode.trim().toUpperCase();
 
-    const chunker = dbChunkers.find((c) => c.code.toUpperCase() === cleanCode);
+    const chunker = dbService.getChunkerByCode(cleanCode);
     if (!chunker) {
       return res.status(404).json({ error: 'Chunker code not found' });
     }
 
-    const host = req.get('host') || 'chunks.edu.vn';
-    const protocol = req.protocol || 'https';
-    const referralLink = `${protocol}://${host}/?ref=${chunker.code}`;
+    const baseUrl = getBaseUrl(req);
+    const referralLink = `${baseUrl}/?ref=${chunker.code}`;
 
-    const referredCandidates = dbCandidates.filter(
-      (c) => c.chunkerCode.toUpperCase() === cleanCode
-    );
+    const { candidates: referredCandidates } = dbService.getCandidates({
+      search: cleanCode,
+      limit: 100,
+    });
 
     return res.status(200).json({
       chunkerName: chunker.name,
@@ -597,86 +591,39 @@ async function startServer() {
    * GET /api/admin/metrics
    */
   app.get('/api/admin/metrics', adminAuthMiddleware, (_req: Request, res: Response) => {
-    const target = 100;
-    const totalRegistered = dbCandidates.length;
-    const greenCount = dbCandidates.filter((c) => c.testType === 'green').length;
-    const redCount = dbCandidates.filter((c) => c.testType === 'red').length;
-
-    const topChunkers = [...dbChunkers]
-      .sort((a, b) => b.referralCount - a.referralCount)
-      .slice(0, 5)
-      .map((c) => ({
-        name: c.name,
-        code: c.code,
-        email: c.email,
-        referralCount: c.referralCount,
-      }));
-
-    return res.status(200).json({
-      target,
-      totalRegistered,
-      greenCount,
-      redCount,
-      topChunkers,
-    });
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    return res.status(200).json(dbService.getMetrics());
   });
 
   /**
    * GET /api/admin/candidates?page=1&limit=20&testType=ALL&status=ALL&search=
-   * Response: Full raw candidate objects including raw Phone, Email, Referral Chunker details, and Status.
+   * Response: Dynamic server-side fetching directly from persistent SQLite database.
    */
   app.get('/api/admin/candidates', adminAuthMiddleware, (req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const parseResult = adminCandidatesQuerySchema.safeParse(req.query);
     if (!parseResult.success) {
       return res.status(400).json({ error: 'Invalid query parameters', details: parseResult.error.flatten() });
     }
 
     const { page, limit, testType, status, search } = parseResult.data;
-
-    let filtered = [...dbCandidates];
-
-    // Filter by test type
-    if (testType !== 'ALL') {
-      const targetType = testType.toLowerCase().includes('green') ? 'green' : 'red';
-      filtered = filtered.filter((c) => c.testType === targetType);
-    }
-
-    // Filter by test level if provided in query
     const levelQuery = req.query.level as string | undefined;
-    if (levelQuery && levelQuery !== 'ALL') {
-      const targetLevel = levelQuery.toLowerCase() === 'hard' || levelQuery.toLowerCase() === 'khó' ? 'hard' : 'easy';
-      filtered = filtered.filter((c) => (c.testLevel || 'easy') === targetLevel);
-    }
 
-    // Filter by status
-    if (status !== 'ALL') {
-      const targetStatus = status.toLowerCase().replace('_', '') as CandidateStatus;
-      filtered = filtered.filter((c) => c.status.toLowerCase().replace('_', '') === targetStatus);
-    }
-
-    // Filter by search query (raw name, phone, email, code)
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      filtered = filtered.filter(
-        (c) =>
-          c.fullName.toLowerCase().includes(q) ||
-          c.phone.includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          c.chunkerCode.toLowerCase().includes(q)
-      );
-    }
-
-    const total = filtered.length;
-    const startIndex = (page - 1) * limit;
-    const paginated = filtered.slice(startIndex, startIndex + limit);
-
-    return res.status(200).json({
+    const result = dbService.getCandidates({
       page,
       limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-      candidates: paginated,
+      testType: testType !== 'ALL' ? (testType.toLowerCase().includes('green') ? 'green' : 'red') : undefined,
+      testLevel: levelQuery && levelQuery !== 'ALL' ? levelQuery : undefined,
+      status: status !== 'ALL' ? status : undefined,
+      search: search.trim() || undefined,
     });
+
+    return res.status(200).json(result);
   });
 
   /**
@@ -689,22 +636,20 @@ async function startServer() {
       return res.status(400).json({ error: 'Invalid update body', details: parseResult.error.flatten() });
     }
 
-    const candidate = dbCandidates.find((c) => c.id === id);
+    const candidate = dbService.getCandidateById(id);
     if (!candidate) {
       return res.status(404).json({ error: 'Candidate not found' });
     }
 
-    const { status, notes, scheduledAt } = parseResult.data;
+    const { status, notes } = parseResult.data;
     const normalizedStatus = status.toLowerCase().replace('_', '') as CandidateStatus;
 
-    candidate.status = normalizedStatus;
-    if (notes !== undefined) candidate.notes = notes;
-    if (scheduledAt !== undefined) candidate.scheduledAt = scheduledAt;
-    candidate.updatedAt = new Date().toISOString();
+    dbService.updateCandidateStatus(id, normalizedStatus, notes);
+    const updated = dbService.getCandidateById(id);
 
     return res.status(200).json({
       success: true,
-      candidate,
+      candidate: updated,
     });
   });
 
@@ -720,27 +665,20 @@ async function startServer() {
     const data = parseResult.data;
     const cleanCode = data.code.toUpperCase();
 
-    if (dbChunkers.some((c) => c.code.toUpperCase() === cleanCode)) {
+    if (dbService.getChunkerByCode(cleanCode)) {
       return res.status(409).json({ error: `Chunker code '${cleanCode}' already exists.` });
     }
 
-    const newChunker: Chunker = {
-      id: `chunker-${Date.now()}`,
+    const chunker = dbService.createChunker({
       name: (data.fullName || data.name)!.trim(),
       code: cleanCode,
       email: data.email.trim().toLowerCase(),
-      secretToken: data.secretToken || `SEC-${cleanCode}`,
-      active: true,
-      referralCount: 0,
       notes: data.notes || '',
-      createdAt: new Date().toISOString(),
-    };
-
-    dbChunkers.unshift(newChunker);
+    });
 
     return res.status(201).json({
       success: true,
-      chunker: newChunker,
+      chunker,
     });
   });
 
@@ -748,8 +686,9 @@ async function startServer() {
    * GET /api/admin/chunkers
    */
   app.get('/api/admin/chunkers', adminAuthMiddleware, (_req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     return res.status(200).json({
-      chunkers: dbChunkers,
+      chunkers: dbService.getChunkers(),
     });
   });
 
@@ -758,8 +697,8 @@ async function startServer() {
    */
   app.get('/api/admin/settings/notifications', adminAuthMiddleware, (_req: Request, res: Response) => {
     return res.status(200).json({
-      settings: notificationSettings,
-      recentLogs: notificationLogs.slice(0, 10),
+      settings: dbService.getNotificationSettings(),
+      recentLogs: dbService.getNotificationLogs(10),
     });
   });
 
@@ -781,17 +720,18 @@ async function startServer() {
       return res.status(400).json({ error: 'Không có email hợp lệ nào được cung cấp.' });
     }
 
-    notificationSettings = {
-      notificationEmails: cleanEmails,
-      enabled: enabled !== false,
-      updatedAt: new Date().toISOString(),
-      updatedBy: req.adminEmail || 'admin',
-    };
+    dbService.saveNotificationSettings(
+      {
+        notificationEmails: cleanEmails,
+        enabled: enabled !== false,
+      },
+      req.adminEmail || 'admin'
+    );
 
     return res.status(200).json({
       success: true,
       message: 'Cập nhật email nhận thông báo thành công!',
-      settings: notificationSettings,
+      settings: dbService.getNotificationSettings(),
     });
   });
 
@@ -799,35 +739,54 @@ async function startServer() {
    * POST /api/admin/notifications/test
    * Dispatches a test notification email event to configured addresses
    */
-  app.post('/api/admin/notifications/test', adminAuthMiddleware, (req: AuthenticatedRequest, res: Response) => {
-    if (!notificationSettings.notificationEmails.length) {
+  app.post('/api/admin/notifications/test', adminAuthMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+    const notifSettings = dbService.getNotificationSettings();
+    if (!notifSettings.notificationEmails.length) {
       return res.status(400).json({ error: 'Chưa cấu hình email nhận thông báo.' });
     }
 
-    const testLog: NotificationDispatchLog = {
+    const fakeCandidate: Candidate = {
       id: `test_${Date.now()}`,
-      recipients: [...notificationSettings.notificationEmails],
-      candidateName: 'Nguyễn Văn A (Mẫu Thử Nghiệm)',
+      fullName: 'Nguyễn Văn A (Mẫu Thử Nghiệm)',
       phone: '0912 345 678',
-      email: 'candidate.sample@example.com',
-      testType: 'Green Focus (%c)',
-      testLevel: 'Khó (Advanced)',
+      email: notifSettings.notificationEmails[0],
+      ageRange: '25-34',
+      occupation: 'Developer',
+      testType: 'green',
+      testLevel: 'hard',
       preferredSlots: 'Tối ngày trong tuần (19:00 - 21:00)',
       chunkerCode: 'TEST2026',
-      timestamp: new Date().toISOString(),
-      status: 'simulated',
+      status: 'new',
+      createdAt: new Date().toISOString(),
     };
 
-    notificationLogs.unshift(testLog);
-    if (notificationLogs.length > 50) notificationLogs.pop();
+    const result = await sendAdminNewCandidateNotification(fakeCandidate, notifSettings.notificationEmails);
+
+    const testLog = {
+      id: `test_${Date.now()}`,
+      recipients: notifSettings.notificationEmails,
+      candidateName: fakeCandidate.fullName,
+      phone: fakeCandidate.phone,
+      email: fakeCandidate.email,
+      testType: 'Green Focus (%c)',
+      testLevel: 'Khó (Advanced)',
+      preferredSlots: fakeCandidate.preferredSlots,
+      chunkerCode: fakeCandidate.chunkerCode,
+      status: result.success ? ('sent' as const) : ('failed' as const),
+      errorDetails: result.error,
+    };
+
+    dbService.addNotificationLog(testLog);
 
     console.log(
-      `[TEST NOTIFICATION DISPATCH] Alert sent to: ${notificationSettings.notificationEmails.join(', ')}`
+      `[TEST NOTIFICATION DISPATCH] Alert sent to: ${notifSettings.notificationEmails.join(', ')} | Success: ${result.success}`
     );
 
     return res.status(200).json({
-      success: true,
-      message: `Đã gửi thông báo thử nghiệm tới ${notificationSettings.notificationEmails.join(', ')}`,
+      success: result.success,
+      message: result.success
+        ? `Đã gửi thông báo thử nghiệm thành công tới ${notifSettings.notificationEmails.join(', ')}!`
+        : `Gửi email thử nghiệm thất bại: ${result.error || 'Vui lòng kiểm tra cấu hình RESEND_API_KEY hoặc SMTP'}`,
       testLog,
     });
   });
@@ -838,16 +797,16 @@ async function startServer() {
    */
   app.post('/api/admin/candidates/:id/resend-confirmation', adminAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
     const candidateId = req.params.id;
-    const candidate = dbCandidates.find((c) => c.id === candidateId);
+    const candidate = dbService.getCandidateById(candidateId);
 
     if (!candidate) {
       return res.status(404).json({ error: 'Không tìm thấy ứng viên.' });
     }
 
-    const result = await sendAutomatedCandidateConfirmationEmail(candidate);
+    const result = await sendCandidateConfirmationEmail(candidate);
+    dbService.updateCandidateEmailStatus(candidateId, result.success, result.success ? 'delivered' : 'failed');
 
-    notificationLogs.unshift({
-      id: `resend_${Date.now()}`,
+    dbService.addNotificationLog({
       recipients: [candidate.email],
       candidateName: candidate.fullName,
       phone: candidate.phone,
@@ -856,14 +815,18 @@ async function startServer() {
       testLevel: candidate.testLevel === 'easy' ? 'Dễ (Foundation)' : 'Khó (Advanced)',
       preferredSlots: candidate.preferredSlots,
       chunkerCode: candidate.chunkerCode,
-      timestamp: new Date().toISOString(),
-      status: result.success ? 'sent' : 'simulated',
+      status: result.success ? 'sent' : 'failed',
+      errorDetails: result.error,
     });
 
+    const updated = dbService.getCandidateById(candidateId);
+
     return res.status(200).json({
-      success: true,
-      message: `Đã gửi lại email xác nhận bài test (${candidate.testType.toUpperCase()} - Level ${candidate.testLevel}) tới ${candidate.email}!`,
-      candidate,
+      success: result.success,
+      message: result.success
+        ? `Đã gửi lại email xác nhận bài test (${candidate.testType.toUpperCase()} - Level ${candidate.testLevel}) tới ${candidate.email}!`
+        : `Gửi email thất bại: ${result.error || 'Vui lòng kiểm tra RESEND_API_KEY hoặc SMTP'}`,
+      candidate: updated,
     });
   });
 
@@ -905,6 +868,7 @@ async function startServer() {
    * Response: Binary Stream text/csv with UTF-8 encoding.
    */
   app.get('/api/admin/export', adminAuthMiddleware, (_req: Request, res: Response) => {
+    const { candidates } = dbService.getCandidates({ limit: 1000 });
     const headers = [
       'Candidate ID',
       'Full Name',
@@ -923,7 +887,7 @@ async function startServer() {
       'Created At',
     ];
 
-    const rows = dbCandidates.map((c) => [
+    const rows = candidates.map((c) => [
       `"${c.id || ''}"`,
       `"${c.fullName.replace(/"/g, '""')}"`,
       `"${c.phone}"`,

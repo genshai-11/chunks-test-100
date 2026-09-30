@@ -10,6 +10,7 @@ import {
   Search,
   UserPlus,
   AlertCircle,
+  Globe,
 } from 'lucide-react';
 import {
   apiLookupChunkee,
@@ -18,6 +19,15 @@ import {
   ChunkeeNotFoundError,
 } from '../api/client';
 import { isValidPhoneNumber, isValidEmailAddress } from '../schemas/validation';
+import {
+  buildReferralUrl,
+  getDomainOptions,
+  getActiveReferralDomain,
+  setActiveReferralDomain,
+  DEFAULT_PRODUCTION_DOMAIN,
+  generateShareInviteMessage,
+  normalizeDomain,
+} from '../utils/referral';
 
 interface Props {
   initialCode?: string;
@@ -41,7 +51,19 @@ export const ChunkerScopedView: React.FC<Props> = ({ initialCode = '', lang }) =
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState(false);
+
+  // Domain selection state (defaults to chunkstest.ai.studio or active domain, NEVER localhost)
+  const domainOptions = getDomainOptions();
+  const [selectedDomain, setSelectedDomain] = useState<string>(() => getActiveReferralDomain());
+  const [customDomainInput, setCustomDomainInput] = useState('');
+  const [showCustomDomainForm, setShowCustomDomainForm] = useState(false);
+
   const qrCanvasRef = useRef<HTMLDivElement>(null);
+
+  // Clean referral link guaranteed to never use localhost
+  const activeReferralUrl = stats
+    ? buildReferralUrl(stats.code, selectedDomain, stats.referralLink)
+    : '';
 
   useEffect(() => {
     try {
@@ -146,18 +168,18 @@ export const ChunkerScopedView: React.FC<Props> = ({ initialCode = '', lang }) =
   };
 
   const copyReferralLink = () => {
-    if (!stats) return;
-    navigator.clipboard.writeText(stats.referralLink);
+    if (!activeReferralUrl) return;
+    navigator.clipboard.writeText(activeReferralUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const shareText =
-    lang === 'vi'
-      ? `Chào bạn, mình gửi bạn thư mời 1-on-1 tham gia kỳ đánh giá "CHUNKS Test 100" (Lý thuyết MSE - Motion, Sound, Emotion). Bài test 45 phút trực tiếp cùng CiC. Đăng ký qua link riêng của mình tại: ${stats?.referralLink}`
-      : `Hi, here is your personal invitation to the 1-on-1 "CHUNKS Test 100" assessment (MSE Theory). It is a 45-minute live diagnostic with a CiC. Secure your slot here: ${stats?.referralLink}`;
+  const shareText = stats
+    ? generateShareInviteMessage(stats.chunkerName, stats.code, activeReferralUrl, lang)
+    : '';
 
   const copyInviteMessage = () => {
+    if (!shareText) return;
     navigator.clipboard.writeText(shareText);
     setCopiedMsg(true);
     setTimeout(() => setCopiedMsg(false), 2000);
@@ -173,6 +195,15 @@ export const ChunkerScopedView: React.FC<Props> = ({ initialCode = '', lang }) =
     link.download = `QR_CHUNKS_${stats?.code || 'REFERRAL'}.png`;
     link.href = url;
     link.click();
+  };
+
+  const handleSaveCustomDomain = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customDomainInput.trim()) return;
+    const normalized = normalizeDomain(customDomainInput);
+    setSelectedDomain(normalized);
+    setActiveReferralDomain(normalized);
+    setShowCustomDomainForm(false);
   };
 
   return (
@@ -410,13 +441,89 @@ export const ChunkerScopedView: React.FC<Props> = ({ initialCode = '', lang }) =
 
           {/* Referral Link & Instant Copy */}
           <div className="p-6 border border-[rgba(10,10,10,0.14)] bg-white space-y-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#0a0a0a]/60">
-              {lang === 'vi' ? 'LINK MỜI ĐỘC QUYỀN' : 'YOUR UNIQUE REFERRAL LINK'}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0a0a0a]">
+                  {lang === 'vi' ? 'LINK MỜI ĐỘC QUYỀN' : 'YOUR UNIQUE REFERRAL LINK'}
+                </span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {selectedDomain.includes('chunkstest.ai.studio')
+                    ? 'chunkstest.ai.studio'
+                    : lang === 'vi'
+                      ? 'Domain Thật'
+                      : 'Real Domain'}
+                </span>
+              </div>
+
+              {/* Domain Switcher */}
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <Globe className="w-3.5 h-3.5 text-[#0a0a0a]/60" />
+                <span className="text-[#0a0a0a]/60 hidden sm:inline">
+                  {lang === 'vi' ? 'Domain:' : 'Domain:'}
+                </span>
+                <select
+                  value={selectedDomain}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'CUSTOM') {
+                      setShowCustomDomainForm(true);
+                      setCustomDomainInput(selectedDomain);
+                    } else {
+                      setSelectedDomain(val);
+                      setActiveReferralDomain(val);
+                      setShowCustomDomainForm(false);
+                    }
+                  }}
+                  className="bg-white border border-[rgba(10,10,10,0.2)] text-[#0a0a0a] font-mono text-[11px] px-2 py-0.5 rounded-none cursor-pointer focus:outline-none focus:border-[#c81e16]"
+                >
+                  <option value={DEFAULT_PRODUCTION_DOMAIN}>
+                    chunkstest.ai.studio (Chính Thức)
+                  </option>
+                  {domainOptions
+                    .filter((opt) => opt.url !== DEFAULT_PRODUCTION_DOMAIN)
+                    .map((opt) => (
+                      <option key={opt.id} value={opt.url}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  <option value="CUSTOM">+ {lang === 'vi' ? 'Tùy chỉnh domain...' : 'Custom domain...'}</option>
+                </select>
+              </div>
             </div>
 
+            {/* Custom Domain Input Form */}
+            {showCustomDomainForm && (
+              <form
+                onSubmit={handleSaveCustomDomain}
+                className="flex items-center gap-2 p-2 bg-slate-50 border border-[rgba(10,10,10,0.18)]"
+              >
+                <input
+                  type="text"
+                  value={customDomainInput}
+                  onChange={(e) => setCustomDomainInput(e.target.value)}
+                  placeholder="VD: https://chunkstest.ai.studio"
+                  className="flex-1 text-[12px] font-mono px-2 py-1 border border-slate-200 focus:outline-none focus:border-[#c81e16] bg-white"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-1 bg-[#0a0a0a] text-white text-[11px] font-semibold cursor-pointer"
+                >
+                  {lang === 'vi' ? 'Áp dụng' : 'Apply'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomDomainForm(false)}
+                  className="px-2 py-1 text-[11px] text-[#0a0a0a]/60 hover:text-[#0a0a0a] cursor-pointer"
+                >
+                  {lang === 'vi' ? 'Hủy' : 'Cancel'}
+                </button>
+              </form>
+            )}
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="flex-1 px-4 py-3 bg-slate-50 border border-[rgba(10,10,10,0.16)] font-mono text-[13.5px] text-[#0a0a0a] truncate select-all">
-                {stats.referralLink}
+              <div className="flex-1 px-4 py-3 bg-slate-50 border border-[rgba(10,10,10,0.16)] font-mono text-[13.5px] text-[#0a0a0a] truncate select-all font-semibold">
+                {activeReferralUrl}
               </div>
               <button
                 type="button"
@@ -440,6 +547,12 @@ export const ChunkerScopedView: React.FC<Props> = ({ initialCode = '', lang }) =
                 )}
               </button>
             </div>
+
+            <div className="text-[11.5px] text-[#0a0a0a]/55 font-light">
+              {lang === 'vi'
+                ? 'Link đã được liên kết với domain thực tế, đảm bảo ứng viên truy cập trực tiếp từ mọi thiết bị (máy tính & điện thoại).'
+                : 'Link is connected to your live domain, accessible by candidates from any device.'}
+            </div>
           </div>
 
           {/* Dynamic QR Code Section */}
@@ -449,7 +562,7 @@ export const ChunkerScopedView: React.FC<Props> = ({ initialCode = '', lang }) =
               className="p-4 bg-white border border-[rgba(10,10,10,0.18)] shrink-0 shadow-sm"
             >
               <QRCodeCanvas
-                value={stats.referralLink}
+                value={activeReferralUrl}
                 size={160}
                 level="H"
                 includeMargin={false}

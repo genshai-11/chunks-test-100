@@ -18,6 +18,7 @@ import { createCandidateRegistrationSchema } from '../schemas/validation';
 import { BookingCalendar, SlotSelection } from '../components/BookingCalendar';
 import { AssessmentDetailModal } from '../components/AssessmentDetailModal';
 import { BookingSuccessModal } from '../components/BookingSuccessModal';
+import { registerCandidate } from '../firebase/services';
 import { ChunksFeatureBand } from '../components/ChunksFeatureBand';
 import { ChunksNumberedFaq } from '../components/ChunksNumberedFaq';
 import { ChunksCtaBand } from '../components/ChunksCtaBand';
@@ -184,6 +185,27 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       const response = await apiRegisterCandidate(candidatePayload);
 
       if (response.success) {
+        // Sync chosen 1-on-1 time slot and candidate details directly to Firestore
+        try {
+          await registerCandidate({
+            fullName: fullName.trim(),
+            phone: phone.trim(),
+            email: email.trim(),
+            ageRange,
+            occupation: occupation.trim(),
+            testType,
+            testLevel,
+            preferredSlots: preferredTimeSlotStr,
+            selectedDate: calendarSlot?.dateStr,
+            selectedTimeSlot: calendarSlot?.timeStr,
+            chunkerCode: safeRefCode,
+            chunkerName: inviterName || (safeRefCode === 'DIRECT' ? '' : safeRefCode),
+          });
+          console.log('[FIRESTORE_SYNC] Successfully synced 1-on-1 time slot with Firestore.');
+        } catch (fsErr) {
+          console.warn('[FIRESTORE_SYNC_WARNING] Firestore sync bypassed or offline:', fsErr);
+        }
+
         setConfirmedCandidate({
           id: response.registrationId,
           fullName: fullName.trim(),
