@@ -80,8 +80,7 @@ interface Props {
 }
 
 export const ChunksNumberedFaq: React.FC<Props> = ({ lang }) => {
-  // Row 01 pre-opened
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleRow = (index: number) => {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -102,9 +101,7 @@ export const ChunksNumberedFaq: React.FC<Props> = ({ lang }) => {
           {/* Right Column (col-span-12 md:col-span-9): Section Heading */}
           <div className="col-span-12 md:col-span-9">
             <h2 className="text-[clamp(1.5rem,3vw,2.2rem)] tracking-[-0.025em] leading-tight font-semibold text-[#0a0a0a]">
-              {lang === 'vi'
-                ? 'Bảy câu hỏi về bài đánh giá 1-on-1 trước khi đăng ký.'
-                : 'Seven things candidates ask before their first 1-on-1 assessment.'}
+              {lang === 'vi' ? 'Câu hỏi thường gặp' : 'Frequently Asked Questions'}
             </h2>
           </div>
         </div>

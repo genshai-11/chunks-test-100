@@ -34,7 +34,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
   const [email, setEmail] = useState('');
   const [ageRange, setAgeRange] = useState<AgeRange>('25-34');
   const [occupation, setOccupation] = useState('');
-  const [testLevel, setTestLevel] = useState<'easy' | 'hard' | null>(null);
+  const [testLevel, setTestLevel] = useState<'easy' | 'hard'>('easy');
   const [customSlotNote, setCustomSlotNote] = useState('');
   const reduceMotion = useReducedMotion();
 
@@ -104,12 +104,16 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
     }
 
     if (!testLevel) {
-      setFieldErrors({ testLevel: lang === 'vi' ? 'Vui lòng chọn Dễ hoặc Khó' : 'Please choose Easy or Hard' });
-      document.getElementById('test-level')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+      setFieldErrors({ testLevel: lang === 'vi' ? 'Vui lòng chọn mức độ bài test' : 'Please select a test level' });
+      document.getElementById('field-testLevel')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
       return;
     }
 
-    const preferredTimeSlotStr = customSlotNote.trim() || (lang === 'vi' ? 'Chưa ghi chú thời gian; liên hệ để sắp xếp' : 'No time preference; contact to arrange');
+    const preferredTimeSlotStr =
+      customSlotNote.trim() ||
+      (lang === 'vi'
+        ? 'Chưa ghi chú lịch; điều phối viên CHUNKS liên hệ xếp lịch'
+        : 'No schedule noted; CHUNKS coordinator will contact to arrange');
 
     const safeRefCode = isCodeValid && referralCode.trim() ? referralCode.trim().toUpperCase() : 'PILOT100';
 
@@ -120,7 +124,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       email: email.trim(),
       ageRange,
       occupation: occupation.trim(),
-      testLevel: testLevel,
+      testType: 'green' as const,
+      testLevel: testLevel || 'easy',
       preferredTimeSlot: preferredTimeSlotStr,
     };
 
@@ -167,8 +172,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
         setConfirmedCandidate({
           id: response.registrationId,
           fullName: fullName.trim(),
-          testType: 'general',
-          testLevel,
+          testType: 'green',
+          testLevel: testLevel || 'easy',
           preferredSlots: preferredTimeSlotStr,
           chunkerName: inviterName || (safeRefCode === 'PILOT100' ? '' : safeRefCode),
           chunkerCode: safeRefCode,
@@ -180,7 +185,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
         setEmail('');
         setOccupation('');
         setCustomSlotNote('');
-        setTestLevel(null);
+        setTestLevel('easy');
         setFormError(null);
         setFieldErrors({});
       } else {
@@ -209,57 +214,53 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
   };
 
   return (
-    <div className="w-full text-[#0a0a0a]">
-      {/* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · editorial CHUNKS hero */}
-      <section className="relative w-full overflow-hidden hairline-b bg-[#f7f5f1]">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.035] hero-grid" aria-hidden="true" />
-        <div className="relative max-w-[1180px] mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-12 gap-x-6 pt-16 md:pt-24 pb-14 md:pb-16">
-          <motion.div initial={reduceMotion ? false : { opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }} className="md:col-span-3 mb-9 md:mb-0 flex flex-col justify-between gap-8">
-            <div className="flex items-center gap-3 text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70">
-              <span className="h-2.5 w-2.5 bg-[#c81e16]" aria-hidden="true" /> CHUNKS / 100
-            </div>
-            <span className="hidden md:block text-[11px] font-mono uppercase tracking-[0.18em] text-[#0a0a0a]/50">MN107.v2.1<br />01 — 21</span>
-          </motion.div>
-          <div className="md:col-span-9 min-w-0">
-            <div className="overflow-hidden">
-              <motion.h1 initial={reduceMotion ? false : { y: '105%' }} animate={{ y: 0 }} transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }} className="max-w-[16ch] min-w-0 text-[clamp(2.7rem,7.4vw,6.8rem)] leading-[0.99] tracking-[-0.055em] font-semibold [overflow-wrap:anywhere]">
-                {lang === 'vi' ? <>Khi nói thật,<br /><span className="text-[#c81e16]">bạn phản xạ ra sao?</span></> : <>How do you respond <span className="text-[#c81e16]">when you speak?</span></>}
-              </motion.h1>
-            </div>
-            <motion.div initial={reduceMotion ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.32 }} className="mt-8 grid grid-cols-1 lg:grid-cols-9 gap-8 lg:gap-12 items-end">
-              <p className="lg:col-span-6 max-w-[53ch] text-[16px] md:text-[18px] leading-[1.65] text-[#0a0a0a]/75">
-                {lang === 'vi' ? 'Một cuộc gặp trực tiếp để quan sát cách bạn duy trì sự chú ý, ứng biến và kết nối ý tưởng khi nói tiếng Anh. Mini-Test 21 câu, 15–20 phút, 1-on-1 cùng Chunker-in-Charge (CiC); không phải bài trắc nghiệm ngữ pháp.' : 'A live conversation to observe how you sustain attention, improvise and connect ideas in spoken English. A 21-question Mini-Test, 15–20 minutes, in person with a Chunker-in-Charge (CiC); not a grammar quiz.'}
-              </p>
-              <div className="lg:col-span-3 flex flex-col gap-3">
-                <motion.button whileHover={reduceMotion ? undefined : { y: -3 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }} type="button" onClick={scrollToForm} className="w-full bg-[#c81e16] hover:bg-[#a81711] text-white font-semibold text-[14px] px-6 py-4 flex justify-between items-center cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81e16] transition-colors">
-                  {lang === 'vi' ? 'Đăng ký Mini-Test' : 'Register for the Mini-Test'} <ArrowUpRight className="w-5 h-5 shrink-0" />
-                </motion.button>
-                <button type="button" onClick={() => onOpenChunkerHub?.(referralCode)} className="text-[12px] font-medium text-[#0a0a0a]/70 hover:text-[#c81e16] flex items-center gap-2 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[#c81e16]">
-                  <QrCode className="w-4 h-4 shrink-0" />{lang === 'vi' ? 'Chunkee? Link & QR' : 'Chunkee? Link & QR'}
-                </button>
+    <div className="chunks-main w-full">
+      <section className="chunks-hero" aria-labelledby="main-hero-title">
+        <motion.div initial={reduceMotion ? false : { opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }} className="chunks-shell chunks-reveal-shell">
+          <div className="chunks-hero-grid">
+            <motion.div initial={reduceMotion ? false : { opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="chunks-hero-rail">
+              <span className="chunks-eyebrow flex items-center gap-3"><span className="block w-2.5 h-2.5 bg-[var(--chunks-accent)]" aria-hidden="true" />CHUNKS TEST · Based on CHUNKS Theory</span>
+              <span className="chunks-meta hidden md:block text-[var(--chunks-muted)]">{lang === 'vi' ? <>MINI-TEST<br />TRỰC TIẾP / 1-ON-1</> : <>MINI-TEST<br />IN PERSON / 1-ON-1</>}</span>
+            </motion.div>
+            <div className="chunks-hero-copy">
+              <div className="overflow-hidden">
+                <motion.h1 id="main-hero-title" initial={reduceMotion ? false : { y: '105%' }} animate={{ y: 0 }} transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }} className="chunks-hero-title">
+                  {lang === 'vi' ? <>Khi nói thật,<br /><strong>bạn phản xạ ra sao?</strong></> : <>When you speak,<br /><strong>how do you respond?</strong></>}
+                </motion.h1>
               </div>
-            </motion.div>
-            <motion.div initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.5 }} className="mt-12 border-t border-[#0a0a0a]/20 grid grid-cols-2 sm:grid-cols-3 gap-5 pt-6">
-              {[
-                ['21', lang === 'vi' ? 'câu ngắn' : 'short questions'],
-                ['15–20', lang === 'vi' ? 'phút trực tiếp' : 'minutes in person'],
-                ['100', lang === 'vi' ? 'lượt đăng ký đủ điều kiện tối đa' : 'qualified registrations maximum'],
-              ].map(([number, label]) => <div key={number} className="flex flex-col gap-1"><strong className="text-[24px] font-mono font-semibold tracking-tight">{number}</strong><span className="text-[12px] text-[#0a0a0a]/65">{label}</span></div>)}
-            </motion.div>
+              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.32 }} className="chunks-hero-info">
+                <p>{lang === 'vi' ? 'Một cuộc gặp trực tiếp để quan sát cách bạn duy trì sự chú ý, ứng biến và kết nối ý tưởng khi nói tiếng Anh. Mini-Test 21 câu, 15–20 phút, 1-on-1 cùng Chunker-in-Charge (CiC); không phải bài trắc nghiệm ngữ pháp.' : 'A live conversation to observe how you sustain attention, improvise and connect ideas in spoken English. A 21-question Mini-Test, 15–20 minutes, in person with a Chunker-in-Charge (CiC); not a grammar quiz.'}</p>
+                <div className="chunks-hero-actions">
+                  <button type="button" className="chunks-pill" onClick={scrollToForm}>{lang === 'vi' ? 'Đăng ký Mini-Test' : 'Register for the Mini-Test'} <ArrowUpRight size={17} aria-hidden="true" /></button>
+                  <button type="button" onClick={() => onOpenChunkerHub?.(referralCode)} className="text-[13px] text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)] transition-colors flex items-center gap-2 cursor-pointer"><QrCode size={15} />{lang === 'vi' ? 'Chunkee? Link & QR' : 'Chunkee? Link & QR'}</button>
+                </div>
+              </motion.div>
+              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.5 }} className="chunks-hero-figures">
+                {[
+                  ['21', lang === 'vi' ? 'câu ngắn' : 'short questions'],
+                  ['15–20', lang === 'vi' ? 'phút trực tiếp' : 'minutes in person'],
+                  ['100', lang === 'vi' ? 'lượt đăng ký đủ điều kiện tối đa' : 'qualified registrations maximum'],
+                ].map(([number, label]) => <div key={number}><strong>{number}</strong><span>{label}</span></div>)}
+              </motion.div>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* 2. Inverted Feature Specimen Rule */}
       <ChunksFeatureBand />
 
-      {/* 3. Form-First Candidate Registration Section */}
-      <section id="booking-form" className="scroll-mt-24 max-w-[1180px] mx-auto px-6 md:px-10 py-16 md:py-24">
+      {/* 3. MSE theory on the same Swiss grid as the review design */}
+      <ChunksCtaBand onRegister={scrollToForm} lang={lang} />
+
+      {/* 4. Candidate Registration Section */}
+      <section id="booking-form" className="scroll-mt-24">
+        <div className="chunks-shell">
         {/* Introductory Banner: About CHUNKS & Mini-Test format */}
-        <motion.div initial={reduceMotion ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="mb-8 p-6 sm:p-8 border-l-4 border-[#c81e16] bg-[#f7f5f1] space-y-5">
+        <motion.div initial={reduceMotion ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="chunks-booking-banner mb-8 p-6 sm:p-8 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="CHUNKS" className="w-5 h-5 object-contain" />
+              <img src="/logo.png" alt="CHUNKS" className="w-[44px] h-auto block shrink-0" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
                 {lang === 'vi' ? 'CHUNKS TEST 100 · BUỔI KHẢO SÁT TRỰC TIẾP' : 'CHUNKS TEST 100 · IN-PERSON ASSESSMENT'}
               </span>
@@ -285,12 +286,26 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </a>
             </div>
           </div>
-           <h2 className="text-[22px] sm:text-[28px] font-semibold tracking-tight max-w-[30ch] leading-tight">{lang === 'vi' ? 'Không cần học trước. Hãy đến và nói như bạn thường nói.' : 'No preparation needed. Speak the way you normally do.'}</h2>
-           <p className="text-[14px] text-[#0a0a0a]/75 leading-relaxed max-w-3xl">
-             {lang === 'vi'
-               ? 'Trong 21 câu ngắn, CiC quan sát cách Chuyển động, Âm thanh và Cảm xúc (MSE) phối hợp khi bạn nói. Bạn chỉ chọn mức độ mong muốn; đội ngũ CHUNKS sẽ liên hệ qua điện thoại/Zalo để thống nhất lịch và địa điểm sau khi nhận đăng ký.'
-               : 'Across 21 short questions, a CiC observes how Motion, Sound and Emotion (MSE) come together as you speak. Choose your preferred difficulty; CHUNKS will contact you by phone/Zalo to agree on the time and venue after registration.'}
-           </p>
+           <h2 className="text-[22px] sm:text-[28px] font-semibold tracking-tight max-w-[32ch] leading-tight text-[#0a0a0a]">
+             {lang === 'vi' ? 'Không cần học trước. Hãy đến và nói như bạn thường nói.' : 'No need to rehearse. Speak just as you normally do.'}
+           </h2>
+           <div className="text-[14px] sm:text-[14.5px] text-[#0a0a0a]/80 leading-relaxed max-w-3xl space-y-3 font-normal">
+             <p>
+               {lang === 'vi'
+                 ? 'Để nói một câu tiếng Anh trôi chảy ngoài đời thực, tâm trí bạn phải điều phối ba việc cùng lúc: tập trung giữ mạch câu, ứng biến khi đổi hướng, và tin vào trực giác ngôn ngữ của mình.'
+                 : 'To speak fluent English in real life, your mind must coordinate three things simultaneously: maintaining focus on your train of thought, improvising when directions shift, and trusting your linguistic intuition.'}
+             </p>
+             <p className="font-semibold text-[#c81e16]">
+               {lang === 'vi'
+                 ? 'Nhưng khi áp lực tăng dần, mắt xích nào trong bạn sẽ bị đứt gãy trước?'
+                 : 'Yet as pressure mounts, which link within you breaks first?'}
+             </p>
+             <p>
+               {lang === 'vi'
+                 ? 'Mini-Test 21 câu (15–20 phút) cùng Chunker-in-Charge không phải một kỳ thi. Đó là nơi bạn thả lỏng để tự nhìn thấy phản xạ thật của mình khi không còn kịch bản chuẩn bị sẵn.'
+                 : 'The 21-question Mini-Test (15–20 minutes) with a Chunker-in-Charge is not an exam. It is a space to unwind and witness your genuine reflexes when prepared scripts are stripped away.'}
+             </p>
+           </div>
         </motion.div>
         {Boolean(referralCode.trim() && isCodeValid && inviterName) && (
           <div className="mb-10 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -610,108 +625,98 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 </div>
               </div>
 
-               {/* 2. Only the requested difficulty is chosen; the assessment stream is not assigned here. */}
-               <fieldset id="test-level" className="space-y-4">
-                 <legend className="sr-only">{lang === 'vi' ? 'Mức độ mong muốn' : 'Preferred difficulty'}</legend>
-                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                   02. {lang === 'vi' ? 'MỨC ĐỘ BẠN MUỐN THỬ' : 'YOUR PREFERRED DIFFICULTY'}
-                 </span>
-                 <p className="text-[13px] text-[#0a0a0a]/70">{lang === 'vi' ? 'Chỉ cần chọn Dễ hoặc Khó. CiC sẽ quan sát phản xạ của bạn trong buổi Mini-Test; bạn không cần chọn loại bài test.' : 'Simply choose Easy or Hard. The CiC will observe your responses during the Mini-Test; there is no test type to select.'}</p>
-                 {fieldErrors.testLevel && <p className="text-[#c81e16] text-sm" role="alert">{fieldErrors.testLevel}</p>}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Option 1: Cơ bản (Dễ) */}
-                   <button type="button" aria-pressed={testLevel === 'easy'} disabled={submitting}
-                      onClick={() => { setTestLevel('easy'); clearFieldError('testLevel'); }}
-                     className={`p-5 text-left w-full border cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81e16] ${
-                       testLevel === 'easy'
-                         ? 'border-[#c81e16] bg-[#fff5f2] ring-1 ring-[#c81e16]'
-                         : 'border-[rgba(10,10,10,0.18)] hover:border-[#c81e16]'
-                     }`}
+              {/* 02. MỨC ĐỘ BÀI TEST (ĐỘ KHÓ) */}
+              <div className="space-y-3">
+                <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
+                  02. {lang === 'vi' ? 'MỨC ĐỘ BÀI TEST (ĐỘ KHÓ)' : 'TEST LEVEL (DIFFICULTY)'}
+                </span>
+                <div className="pt-1">
+                  <label htmlFor="field-testLevel" className="sr-only">
+                    {lang === 'vi' ? 'Mức độ bài test (Độ khó)' : 'Test level (Difficulty)'}
+                  </label>
+                  <select
+                    id="field-testLevel"
+                    disabled={submitting}
+                    value={testLevel || 'easy'}
+                    onChange={(e) => {
+                      setTestLevel(e.target.value as 'easy' | 'hard');
+                      clearFieldError('testLevel');
+                    }}
+                    className={`w-full border px-3.5 py-3 text-[14px] text-[#0a0a0a] focus:outline-none transition-colors bg-white cursor-pointer ${
+                      fieldErrors.testLevel
+                        ? 'border-[#c81e16] bg-rose-50/20 focus:border-[#c81e16]'
+                        : 'border-[rgba(10,10,10,0.2)] focus:border-[#0a0a0a]'
+                    }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
-                        <span className="text-[14px] font-bold text-[#0a0a0a]">
-                          {lang === 'vi' ? 'Cơ bản (Dễ)' : 'Foundation (Easy)'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 border border-blue-200 text-blue-700 bg-blue-50/60 font-semibold">
-                        {lang === 'vi' ? 'CƠ BẢN' : 'EASY'}
-                      </span>
-                    </div>
-
-                    <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
+                    <option value="easy">
                       {lang === 'vi'
-                         ? 'Tôi muốn bắt đầu ở nhịp độ vừa phải, có thời gian làm quen với câu hỏi.'
-                         : 'I would like a measured pace and time to get comfortable with the questions.'}
-                    </p>
-
-                    <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between text-[11px] font-mono text-[#0a0a0a]/60">
-                       <span>{lang === 'vi' ? 'Nhịp độ mong muốn' : 'Preferred pace'}</span>
-                       <span className="text-blue-700 font-semibold">01 / 02</span>
-                     </div>
-                   </button>
-
-                  {/* Option 2: Nâng cao (Khó) */}
-                   <button type="button" aria-pressed={testLevel === 'hard'} disabled={submitting}
-                      onClick={() => { setTestLevel('hard'); clearFieldError('testLevel'); }}
-                     className={`p-5 text-left w-full border cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81e16] ${
-                       testLevel === 'hard'
-                         ? 'border-[#c81e16] bg-[#fff5f2] ring-1 ring-[#c81e16]'
-                         : 'border-[rgba(10,10,10,0.18)] hover:border-[#c81e16]'
-                     }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ff3b30] shrink-0" />
-                        <span className="text-[14px] font-bold text-[#0a0a0a]">
-                          {lang === 'vi' ? 'Nâng cao (Khó)' : 'Advanced (Hard)'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 border border-rose-200 text-[#c81e16] bg-rose-50/60 font-semibold">
-                        {lang === 'vi' ? 'NÂNG CAO' : 'HARD'}
-                      </span>
-                    </div>
-
-                    <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
+                        ? 'Cơ bản (Dễ) — Nhịp độ tiêu chuẩn, làm quen phản xạ tự nhiên'
+                        : 'Basic (Easy) — Standard pace, natural reflex acclimatization'}
+                    </option>
+                    <option value="hard">
                       {lang === 'vi'
-                         ? 'Tôi muốn thử câu hỏi có nhịp nhanh hơn và gợi ý bất ngờ hơn.'
-                         : 'I would like a quicker pace with more unexpected prompts.'}
+                        ? 'Nâng cao (Khó) — Nhịp độ dồn dập, tăng ma sát phản xạ dưới áp lực'
+                        : 'Advanced (Hard) — Rapid pace, heightened reflex friction under pressure'}
+                    </option>
+                  </select>
+                  {fieldErrors.testLevel && (
+                    <p className="text-[12px] text-[#c81e16] mt-1 flex items-center gap-1 font-mono">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.testLevel}</span>
                     </p>
+                  )}
+                  <p className="text-[12.5px] text-[#0a0a0a]/70 flex items-center gap-1.5 mt-2.5">
+                    <span>💡</span>
+                    <span>
+                      {lang === 'vi'
+                        ? 'Chuyên viên CiC sẽ linh hoạt điều chỉnh theo nhịp nói và phản xạ thực tế của bạn.'
+                        : 'The CiC specialist will flexibly adapt to your actual speech rhythm and reflex.'}
+                    </span>
+                  </p>
+                </div>
+              </div>
 
-                    <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between text-[11px] font-mono text-[#0a0a0a]/60">
-                       <span>{lang === 'vi' ? 'Nhịp độ mong muốn' : 'Preferred pace'}</span>
-                       <span className="text-[#c81e16] font-semibold">02 / 02</span>
-                     </div>
-                   </button>
-                 </div>
-               </fieldset>
-
-               {/* 3. Free-form time preference; operations confirms the appointment. */}
-               <div className="space-y-4">
-                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                   03. {lang === 'vi' ? 'GHI CHÚ THỜI GIAN (TÙY CHỌN)' : 'TIME PREFERENCE (OPTIONAL)'}
-                 </span>
-                 <p className="text-[13px] text-[#0a0a0a]/75 font-normal -mt-2">
-                   {lang === 'vi'
-                     ? 'Bạn có thể ghi khi nào thuận tiện hoặc mong muốn thử bài test. Đây chỉ là gợi ý; điều phối viên sẽ gọi/Zalo để xác nhận lịch trực tiếp tại cơ sở CHUNKS.'
-                     : 'Tell us when you are available or what you hope to try. This is only a preference; operations will call/message you to confirm the in-person appointment at CHUNKS.'}
-                 </p>
-                 <div className="pt-1">
-                   <label htmlFor="time-preference" className="block text-[11px] font-mono text-[#0a0a0a]/60 uppercase tracking-wider mb-1">
-                     {lang === 'vi' ? 'Ghi chú của bạn' : 'Your note'}
-                   </label>
-                   <textarea id="time-preference" rows={3} maxLength={200} disabled={submitting}
-                     value={customSlotNote}
-                     onChange={(e) => setCustomSlotNote(e.target.value)}
-                     placeholder={
-                       lang === 'vi'
-                         ? 'Ví dụ: Tôi rảnh chiều thứ Bảy, muốn thử mức Khó nếu phù hợp...'
-                         : 'e.g. Saturday afternoons work for me; I would like to try the Hard level...'
-                     }
-                     className="w-full border border-[rgba(10,10,10,0.18)] px-3.5 py-2.5 text-[13.5px] text-[#0a0a0a] focus:outline-none focus:border-[#c81e16] bg-white resize-y"
-                   />
+              {/* 03. LỊCH TEST MONG MUỐN (GHI CHÚ DỰ KIẾN) */}
+              <div className="space-y-3">
+                <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
+                  03. {lang === 'vi' ? 'LỊCH TEST MONG MUỐN (GHI CHÚ DỰ KIẾN)' : 'PREFERRED SCHEDULE (ESTIMATED NOTE)'}
+                </span>
+                <p className="text-[13px] text-[#0a0a0a]/75 leading-relaxed font-light">
+                  {lang === 'vi'
+                    ? 'Thời lượng 15 – 20 phút trực tiếp 1-on-1 cùng CiC. Vui lòng ghi chú ngày hoặc khung giờ bạn thuận tiện tham gia nhất, điều phối viên CHUNKS sẽ gọi điện hoặc nhắn Zalo để thống nhất lịch hẹn chính thức tại cơ sở.'
+                    : 'Duration 15–20 minutes in-person 1-on-1 with a CiC. Please note your most convenient date or time window; CHUNKS coordinators will call or message via Zalo to finalize your official appointment at the center.'}
+                </p>
+                <div className="pt-1">
+                  <label htmlFor="field-preferredTimeSlot" className="sr-only">
+                    {lang === 'vi' ? 'Ghi chú lịch test mong muốn' : 'Preferred schedule note'}
+                  </label>
+                  <textarea
+                    id="field-preferredTimeSlot"
+                    rows={3}
+                    maxLength={250}
+                    disabled={submitting}
+                    value={customSlotNote}
+                    onChange={(e) => {
+                      setCustomSlotNote(e.target.value);
+                      clearFieldError('preferredTimeSlot');
+                    }}
+                    placeholder={
+                      lang === 'vi'
+                        ? 'Ví dụ: Tối thứ Bảy tuần này sau 19h, hoặc các buổi chiều trong tuần sau 17h...'
+                        : 'e.g. This Saturday evening after 7 PM, or weekday afternoons after 5 PM...'
+                    }
+                    className={`w-full border px-3.5 py-2.5 text-[14px] text-[#0a0a0a] focus:outline-none transition-colors bg-white resize-y ${
+                      fieldErrors.preferredTimeSlot
+                        ? 'border-[#c81e16] bg-rose-50/20 focus:border-[#c81e16]'
+                        : 'border-[rgba(10,10,10,0.2)] focus:border-[#0a0a0a]'
+                    }`}
+                  />
+                  {fieldErrors.preferredTimeSlot && (
+                    <p className="text-[12px] text-[#c81e16] mt-1 flex items-center gap-1 font-mono">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.preferredTimeSlot}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -743,16 +748,11 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
             </form>
           </div>
         </motion.div>
+        </div>
       </section>
 
-      {/* 4. Swiss Numbered FAQ Section */}
+      {/* 5. Swiss Numbered FAQ Section */}
       <ChunksNumberedFaq lang={lang} />
-
-      {/* 5. Inverted CTA Band */}
-      <ChunksCtaBand
-        onSelectGreen={scrollToForm}
-        lang={lang}
-      />
 
       {/* Modals */}
       <BookingSuccessModal

@@ -102,7 +102,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#0a0a0a] flex flex-col font-sans selection:bg-[#ff3b30] selection:text-white">
+    <div className="min-h-screen bg-[var(--chunks-surface)] text-[var(--chunks-ink)] flex flex-col [font-family:var(--chunks-display)] selection:bg-[var(--chunks-accent)] selection:text-white">
       {/* Top Sticky Navbar with Customer-Facing Navigation & Subtle Chunker CTA */}
       <Navbar
         currentView={currentView}

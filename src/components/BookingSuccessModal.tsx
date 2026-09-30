@@ -97,7 +97,7 @@ export const BookingSuccessModal: React.FC<Props> = ({
             <div className="flex items-center justify-between">
               <span className="text-[#0a0a0a]/60">{lang === 'vi' ? 'Bài test' : 'Assessment'}:</span>
               <span className="font-semibold text-[#0a0a0a]">
-                 {candidate.testType === 'general' ? (lang === 'vi' ? 'Mini-Test 21 câu' : '21-question Mini-Test') : isGreen ? 'Green Test (%c Focus)' : 'Red Test (%r Improv)'}
+                 {candidate.testType === 'general' || candidate.testType === 'green' ? (lang === 'vi' ? 'Mini-Test 21 câu' : '21-question Mini-Test') : isGreen ? 'Green Test (%c Focus)' : 'Red Test (%r Improv)'}
               </span>
             </div>
             <div className="flex items-center justify-between">

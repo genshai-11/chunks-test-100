@@ -32,15 +32,15 @@ export const Navbar: React.FC<Props> = ({
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const faqEl = document.getElementById('faq');
-      const testEl = document.getElementById('test-options');
+      const mseEl = document.getElementById('mse-method') || document.getElementById('mse');
       const bookingEl = document.getElementById('booking-form');
 
       if (faqEl && scrollY >= faqEl.offsetTop - 240) {
         setActiveSection('faq');
-      } else if (testEl && scrollY >= testEl.offsetTop - 240) {
-        setActiveSection('test-options');
       } else if (bookingEl && scrollY >= bookingEl.offsetTop - 240) {
         setActiveSection('booking-form');
+      } else if (mseEl && scrollY >= mseEl.offsetTop - 240) {
+        setActiveSection('mse-method');
       }
     };
 
@@ -63,41 +63,41 @@ export const Navbar: React.FC<Props> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md hairline-b">
-      <div className="max-w-[1180px] mx-auto px-6 md:px-10 min-h-[80px] sm:min-h-[86px] py-2 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-[var(--chunks-rule)]">
+      <div className="chunks-shell min-h-[72px] py-2 flex items-center justify-between gap-4">
         {/* Brand Lockup: Red square + CHUNKS wordmark */}
         <div
           onClick={() => {
             onSelectView('booking');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="flex items-center gap-3.5 cursor-pointer group select-none shrink-0"
+          className="flex items-center gap-2.5 cursor-pointer group select-none shrink-0"
         >
           <img
             src="/logo.png"
             alt="CHUNKS Logo"
-            className="w-[68px] h-[68px] sm:w-[76px] sm:h-[76px] object-contain shrink-0 transition-transform group-hover:scale-105"
+            className="w-[72px] sm:w-[86px] h-auto aspect-[500/215] block shrink-0"
           />
-          <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2">
-            <span className="text-[20px] sm:text-[23px] font-bold tracking-tight text-[#0a0a0a] leading-none">
-              CHUNKS
+          <div className="flex flex-col">
+            <span className="text-[13px] sm:text-[17px] font-bold tracking-tight text-[var(--chunks-ink)] leading-none whitespace-nowrap">
+              CHUNKS TEST
             </span>
-            <span className="text-[11px] sm:text-[11.5px] font-bold uppercase tracking-[0.22em] text-[#c81e16] leading-none">
-              TEST 100
+            <span className="text-[9px] font-mono text-[var(--chunks-muted)] tracking-wider uppercase leading-none mt-1">
+              Based on CHUNKS Theory
             </span>
           </div>
         </div>
 
         {/* Center: Customer-Facing Campaign Navigation Links (Compact Sleek Segmented Tabs) */}
         {currentView !== 'admin' ? (
-          <nav className="hidden md:flex items-center p-0.5 bg-[#f4f4f5] border border-black/[0.06] rounded-full text-[11px] font-medium tracking-tight gap-0.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+          <nav className="hidden md:flex items-center text-[13px] font-medium gap-8">
             <button
               type="button"
               onClick={() => scrollToSection('booking-form')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`transition-colors cursor-pointer ${
                 activeSection === 'booking-form'
-                  ? 'bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
-                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a] hover:bg-white/50'
+                  ? 'text-[var(--chunks-accent)] font-semibold'
+                  : 'text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)]'
               }`}
             >
               {lang === 'vi' ? 'Đăng ký' : 'Register'}
@@ -105,23 +105,23 @@ export const Navbar: React.FC<Props> = ({
 
             <button
               type="button"
-              onClick={() => scrollToSection('test-options')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                activeSection === 'test-options'
-                  ? 'bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
-                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a] hover:bg-white/50'
+              onClick={() => scrollToSection('mse-method')}
+              className={`transition-colors cursor-pointer ${
+                activeSection === 'mse-method'
+                  ? 'text-[var(--chunks-accent)] font-semibold'
+                  : 'text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)]'
               }`}
             >
-              Green &amp; Red
+              {lang === 'vi' ? 'Phương pháp MSE' : 'MSE Method'}
             </button>
 
             <button
               type="button"
               onClick={() => scrollToSection('faq')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`transition-colors cursor-pointer ${
                 activeSection === 'faq'
-                  ? 'bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.06)] font-semibold'
-                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a] hover:bg-white/50'
+                  ? 'text-[var(--chunks-accent)] font-semibold'
+                  : 'text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)]'
               }`}
             >
               FAQ
@@ -135,18 +135,18 @@ export const Navbar: React.FC<Props> = ({
         )}
 
         {/* Right Tools: Subtle Chunker Gateway Button & Language Toggle */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {currentView !== 'admin' ? (
             <>
               {/* Subtle Clean Call-To-Action Button for Chunkers */}
               <button
                 type="button"
                 onClick={onOpenChunkerHub}
-                className="text-[12.5px] font-medium text-[#0a0a0a]/80 hover:text-[#0a0a0a] border border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a] hover:bg-slate-50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all cursor-pointer"
+                className="text-[12.5px] font-medium text-[var(--chunks-ink)] border border-[var(--chunks-rule)] hover:border-[var(--chunks-accent)] px-2.5 sm:px-3.5 py-2 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
                 title="Lấy link & mã QR cho người giới thiệu"
               >
-                <QrCode className="w-3.5 h-3.5 text-[#c81e16]" />
-                <span>
+                <QrCode className="w-3.5 h-3.5 text-[var(--chunks-accent)]" />
+                <span className="hidden sm:inline">
                   {lang === 'vi'
                     ? 'Bạn là Chunkee? Lấy link & QR'
                     : 'Chunkee Gateway (Link & QR)'}
@@ -170,7 +170,7 @@ export const Navbar: React.FC<Props> = ({
           <button
             type="button"
             onClick={onToggleLang}
-            className="text-[12px] font-semibold text-[#0a0a0a]/75 hover:text-[#0a0a0a] border border-[rgba(10,10,10,0.14)] rounded-full px-2.5 py-1 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="text-[12px] font-semibold text-[var(--chunks-muted)] hover:text-[var(--chunks-ink)] border border-[var(--chunks-rule)] rounded-full px-2.5 py-2 flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Toggle Language"
           >
             <Globe className="w-3 h-3 text-[#c81e16]" />
