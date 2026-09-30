@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Check } fro
 export interface SlotSelection {
   dateStr: string; // e.g. "2026-10-02"
   displayDate: string; // e.g. "Thứ Sáu, 02/10/2026"
-  timeStr: string; // e.g. "19:00 - 19:45"
-  fullSlotString: string; // e.g. "Thứ Sáu, 02/10/2026 (19:00 - 19:45)"
+  timeStr: string; // e.g. "19:00 - 19:20"
+  fullSlotString: string; // e.g. "Thứ Sáu, 02/10/2026 (19:00 - 19:20)"
 }
 
 interface BookingCalendarProps {
@@ -25,16 +25,16 @@ interface DaySlot {
 
 const DAILY_TIME_SLOTS: DaySlot[] = [
   // Morning
-  { time: '09:00 - 09:45', period: 'morning', available: true },
-  { time: '10:30 - 11:15', period: 'morning', available: true },
+  { time: '09:00 - 09:20', period: 'morning', available: true },
+  { time: '10:00 - 10:20', period: 'morning', available: true },
   // Afternoon
-  { time: '14:00 - 14:45', period: 'afternoon', available: true },
-  { time: '15:30 - 16:15', period: 'afternoon', available: true },
-  { time: '16:45 - 17:30', period: 'afternoon', available: true },
+  { time: '14:00 - 14:20', period: 'afternoon', available: true },
+  { time: '15:30 - 15:50', period: 'afternoon', available: true },
+  { time: '16:30 - 16:50', period: 'afternoon', available: true },
   // Evening (High Demand)
-  { time: '19:00 - 19:45', period: 'evening', available: true, tag: 'HOT' },
-  { time: '20:00 - 20:45', period: 'evening', available: true, tag: 'HOT' },
-  { time: '21:00 - 21:45', period: 'evening', available: true },
+  { time: '19:00 - 19:20', period: 'evening', available: true, tag: 'HOT' },
+  { time: '19:40 - 20:00', period: 'evening', available: true, tag: 'HOT' },
+  { time: '20:30 - 20:50', period: 'evening', available: true },
 ];
 
 export const BookingCalendar: React.FC<BookingCalendarProps> = ({
@@ -76,7 +76,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
 
   // Selected time slot
   const [selectedTime, setSelectedTime] = useState<string>(
-    initialTime || '19:00 - 19:45'
+    initialTime || '19:00 - 19:20'
   );
 
   const [periodFilter, setPeriodFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -233,8 +233,8 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
           </h3>
           <p className="text-[12.5px] text-[#0a0a0a]/65 font-light mt-0.5">
             {lang === 'vi'
-              ? 'Thời lượng 45 phút với Chunker-in-Charge (CiC). Lịch đã chọn sẽ được đồng bộ trực tiếp lên hệ thống Firestore.'
-              : '45-minute private evaluation with CiC. Your selection syncs automatically with Firestore.'}
+              ? 'Thời lượng 15 – 20 phút với Chunker-in-Charge (CiC). Lịch đã chọn là thời gian mong muốn dự kiến và được đồng bộ trực tiếp lên hệ thống Firestore.'
+              : '15–20 minute private evaluation with CiC. Desired expected slot synced with Firestore.'}
           </p>
         </div>
 
@@ -395,10 +395,10 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
                     </div>
                     <div className="text-[11px] text-[#0a0a0a]/55 font-light">
                       {slot.period === 'morning'
-                        ? (lang === 'vi' ? 'Buổi sáng (45 phút)' : 'Morning (45 mins)')
+                        ? (lang === 'vi' ? 'Buổi sáng (20 phút)' : 'Morning (20 mins)')
                         : slot.period === 'afternoon'
-                        ? (lang === 'vi' ? 'Buổi chiều (45 phút)' : 'Afternoon (45 mins)')
-                        : (lang === 'vi' ? 'Buổi tối (45 phút)' : 'Evening (45 mins)')}
+                        ? (lang === 'vi' ? 'Buổi chiều (20 phút)' : 'Afternoon (20 mins)')
+                        : (lang === 'vi' ? 'Buổi tối (20 phút)' : 'Evening (20 mins)')}
                     </div>
                   </div>
 
@@ -421,8 +421,8 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
 
           <div className="p-3 bg-amber-50/60 border border-amber-200/80 text-[11.5px] text-amber-900 leading-relaxed font-light">
             {lang === 'vi'
-              ? '💡 Lưu ý: Mỗi khung giờ là buổi đánh giá 1-on-1 riêng tư 45 phút. CiC sẽ gọi điện hoặc nhắn tin Zalo xác nhận link phòng trước buổi test.'
-              : '💡 Note: Each slot is an exclusive 45-minute 1-on-1 session. CiC coordinates the confidential room link beforehand.'}
+              ? '💡 Lưu ý: Mỗi khung giờ là buổi đánh giá 1-on-1 trực tiếp 15 – 20 phút. Điều phối viên sẽ liên hệ điện thoại hoặc Zalo để chốt lịch hẹn chính thức tại cơ sở.'
+              : '💡 Note: Each slot is an in-person 15–20 minute 1-on-1 session. Operations will contact you via phone or Zalo to confirm the final appointment.'}
           </div>
         </div>
       </div>

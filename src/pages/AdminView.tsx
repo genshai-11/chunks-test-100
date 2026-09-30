@@ -91,6 +91,19 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   const [creatingChunker, setCreatingChunker] = useState(false);
   const [newChunkerError, setNewChunkerError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [chunkerSearch, setChunkerSearch] = useState('');
+
+  const filteredChunkers = (chunkers || []).filter((ch) => {
+    if (!chunkerSearch.trim()) return true;
+    const q = chunkerSearch.trim().toLowerCase();
+    return (
+      (ch.name && ch.name.toLowerCase().includes(q)) ||
+      (ch.code && ch.code.toLowerCase().includes(q)) ||
+      (ch.email && ch.email.toLowerCase().includes(q)) ||
+      (ch.notes && ch.notes.toLowerCase().includes(q))
+    );
+  });
+
   // Edit Chunker state
   const [editingChunker, setEditingChunker] = useState<Chunker | null>(null);
   const [editChunkerName, setEditChunkerName] = useState('');
@@ -319,12 +332,19 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   };
 
   const handleDeleteChunker = async (code: string, name: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa vĩnh viễn Chunkee "${name}" (${code})?`)) return;
+    const confirmPrompt =
+      lang === 'vi'
+        ? `Bạn có chắc muốn xóa vĩnh viễn Chunkee "${name}" (${code})? Thao tác này không thể hoàn tác.`
+        : `Are you sure you want to permanently delete Chunkee "${name}" (${code})? This action cannot be undone.`;
+    if (!confirm(confirmPrompt)) return;
     try {
       await apiDeleteChunker(activeEmail, code);
       setChunkers((prev) => prev.filter((c) => c.code !== code));
+      if (editingChunker?.code === code) {
+        setEditingChunker(null);
+      }
     } catch (err: any) {
-      alert(`Không thể xóa Chunkee: ${err.message}`);
+      alert(lang === 'vi' ? `Không thể xóa Chunkee: ${err.message}` : `Failed to delete Chunkee: ${err.message}`);
     }
   };
 
@@ -913,20 +933,48 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
 
       {/* Chunker Accounts Table */}
       <div className="border border-[rgba(10,10,10,0.14)] p-6 bg-white space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(10,10,10,0.14)] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[rgba(10,10,10,0.14)] pb-4">
           <div>
             <span className="text-[10.5px] uppercase tracking-[0.2em] font-semibold text-[#0a0a0a]/50">
               COMMUNITY DIRECTORY
             </span>
             <h3 className="text-[18px] font-semibold text-[#0a0a0a] mt-0.5">
-              Chunkee Referral Accounts ({chunkers.length})
+              Chunkee Referral Accounts ({filteredChunkers.length}/{chunkers.length})
             </h3>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono bg-slate-50 text-[#0a0a0a] border border-[rgba(10,10,10,0.15)] font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#c81e16] animate-pulse" />
-              MN107.V2.1 / CONSCIOUS PERFORMANCE (Powered by chunks theory)
-            </span>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Search Input for Chunkees */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={lang === 'vi' ? 'Tìm theo tên hoặc mã code...' : 'Search by name or code...'}
+                value={chunkerSearch}
+                onChange={(e) => setChunkerSearch(e.target.value)}
+                className="pl-8 pr-7 py-1.5 border border-[rgba(10,10,10,0.2)] text-[12.5px] text-[#0a0a0a] focus:outline-none focus:border-[#c81e16] w-52 sm:w-64"
+              />
+              <Search className="w-3.5 h-3.5 text-[#0a0a0a]/40 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              {chunkerSearch && (
+                <button
+                  type="button"
+                  onClick={() => setChunkerSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Prominent + Thêm Chunkee button */}
+            <button
+              type="button"
+              onClick={() => setShowAddChunker(true)}
+              className="px-4 py-1.5 bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[12.5px] font-semibold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>{lang === 'vi' ? '+ Thêm Chunkee' : '+ Add Chunkee'}</span>
+            </button>
           </div>
         </div>
 
@@ -937,74 +985,107 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                 <th className="py-2.5 pr-4">Chunkee Name</th>
                 <th className="py-2.5 pr-4">Code</th>
                 <th className="py-2.5 pr-4">Email</th>
+                <th className="py-2.5 pr-4 text-center">Trạng Thái</th>
                 <th className="py-2.5 pr-4">Link Giới Thiệu</th>
                 <th className="py-2.5 text-right">Referral Tally</th>
                 <th className="py-2.5 text-center">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgba(10,10,10,0.08)]">
-              {chunkers.map((ch) => {
-                const refLink = buildReferralUrl(ch.code);
-                const isCopied = copiedLink === ch.code;
-                return (
-                  <tr key={ch.code} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 pr-4 font-semibold text-[#0a0a0a]">{ch.name}</td>
-                    <td className="py-3 pr-4 font-mono font-bold text-[#c81e16]">{ch.code}</td>
-                    <td className="py-3 pr-4 text-[#0a0a0a]/70 font-mono text-xs">{ch.email}</td>
-                    <td className="py-3 pr-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(refLink);
-                          setCopiedLink(ch.code);
-                          setTimeout(() => setCopiedLink(null), 2000);
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono border transition-all cursor-pointer ${
-                          isCopied
-                            ? 'bg-emerald-600 text-white border-emerald-600'
-                            : 'bg-white hover:bg-slate-100 text-[#0a0a0a] border-[rgba(10,10,10,0.18)]'
-                        }`}
-                        title={refLink}
-                      >
-                        {isCopied ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            <span>Đã chép link</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3 text-[#c81e16]" />
-                            <span>Sao chép link</span>
-                          </>
+              {filteredChunkers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-[#0a0a0a]/50">
+                    {chunkerSearch
+                      ? (lang === 'vi' ? 'Không tìm thấy Chunkee nào phù hợp với từ khóa tìm kiếm.' : 'No Chunkees match your search.')
+                      : (lang === 'vi' ? 'Chưa có tài khoản Chunkee nào.' : 'No Chunkee accounts found.')}
+                  </td>
+                </tr>
+              ) : (
+                filteredChunkers.map((ch) => {
+                  const refLink = buildReferralUrl(ch.code);
+                  const isCopied = copiedLink === ch.code;
+                  const isActive = ch.active !== false;
+
+                  return (
+                    <tr key={ch.code} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 pr-4">
+                        <div className="font-semibold text-[#0a0a0a]">{ch.name}</div>
+                        {ch.notes && (
+                          <div className="text-[11px] text-[#0a0a0a]/50 font-normal truncate max-w-xs" title={ch.notes}>
+                            {ch.notes}
+                          </div>
                         )}
-                      </button>
-                    </td>
-                    <td className="py-3 text-right font-mono font-bold tabular-nums text-[#0a0a0a]">
-                      {ch.referralCount || 0}
-                    </td>
-                    <td className="py-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                      </td>
+                      <td className="py-3 pr-4 font-mono font-bold text-[#c81e16]">{ch.code}</td>
+                      <td className="py-3 pr-4 text-[#0a0a0a]/70 font-mono text-xs">{ch.email}</td>
+                      <td className="py-3 pr-4 text-center">
+                        {isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span>{lang === 'vi' ? 'Đang hoạt động' : 'Active'}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                            <span>{lang === 'vi' ? 'Tạm khóa' : 'Inactive'}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4">
                         <button
                           type="button"
-                          onClick={() => handleOpenEditChunker(ch)}
-                          className="p-1.5 border border-[rgba(10,10,10,0.15)] hover:border-[#0a0a0a] hover:bg-slate-100 text-[#0a0a0a] rounded transition-colors cursor-pointer"
-                          title="Chỉnh sửa Chunkee"
+                          onClick={() => {
+                            navigator.clipboard.writeText(refLink);
+                            setCopiedLink(ch.code);
+                            setTimeout(() => setCopiedLink(null), 2000);
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono border transition-all cursor-pointer ${
+                            isCopied
+                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              : 'bg-white hover:bg-slate-100 text-[#0a0a0a] border-[rgba(10,10,10,0.18)]'
+                          }`}
+                          title={refLink}
                         >
-                          <Edit2 className="w-3 h-3 text-slate-700" />
+                          {isCopied ? (
+                            <>
+                              <Check className="w-3 h-3" />
+                              <span>Đã chép link</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 text-[#c81e16]" />
+                              <span>Sao chép link</span>
+                            </>
+                          )}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteChunker(ch.code, ch.name)}
-                          className="p-1.5 border border-rose-200 hover:border-rose-400 hover:bg-rose-50 text-rose-600 rounded transition-colors cursor-pointer"
-                          title="Xóa Chunkee"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="py-3 text-right font-mono font-bold tabular-nums text-[#0a0a0a]">
+                        {ch.referralCount || 0}
+                      </td>
+                      <td className="py-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditChunker(ch)}
+                            className="p-1.5 border border-[rgba(10,10,10,0.15)] hover:border-[#0a0a0a] hover:bg-slate-100 text-[#0a0a0a] rounded transition-colors cursor-pointer"
+                            title={lang === 'vi' ? 'Chỉnh sửa Chunkee' : 'Edit Chunkee'}
+                          >
+                            <Edit2 className="w-3 h-3 text-slate-700" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteChunker(ch.code, ch.name)}
+                            className="p-1.5 border border-rose-200 hover:border-rose-400 hover:bg-rose-50 text-rose-600 rounded transition-colors cursor-pointer"
+                            title={lang === 'vi' ? 'Xóa Chunkee' : 'Delete Chunkee'}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -1077,6 +1158,19 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                   placeholder="nam.le@chunks.edu.vn"
                   value={newChunkerEmail}
                   onChange={(e) => setNewChunkerEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-[rgba(10,10,10,0.2)] text-[13.5px] focus:outline-none focus:border-[#c81e16]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70 mb-1">
+                  {lang === 'vi' ? 'Ghi chú (Notes - tùy chọn)' : 'Notes (Optional)'}
+                </label>
+                <input
+                  type="text"
+                  placeholder={lang === 'vi' ? 'Ghi chú nội bộ về Chunkee này...' : 'Internal notes about this Chunkee...'}
+                  value={newChunkerNotes}
+                  onChange={(e) => setNewChunkerNotes(e.target.value)}
                   className="w-full px-3 py-2 border border-[rgba(10,10,10,0.2)] text-[13.5px] focus:outline-none focus:border-[#c81e16]"
                 />
               </div>

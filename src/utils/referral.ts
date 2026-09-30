@@ -181,7 +181,7 @@ export function generateShareInviteMessage(
   lang: 'vi' | 'en' = 'vi'
 ): string {
   if (lang === 'vi') {
-    return `Chào bạn, ${chunkeeName || 'mình'} gửi bạn thư mời tham gia kỳ đánh giá 1-on-1 "CHUNKS Test 100" (Lý thuyết MSE - Motion, Sound, Emotion). Bài test 45 phút trực tiếp cùng CiC. Đăng ký qua link riêng của mình tại: ${referralUrl}`;
+    return `Chào bạn, ${chunkeeName || 'mình'} gửi bạn thư mời tham gia kỳ đánh giá 1-on-1 "CHUNKS Test 100" (Lý thuyết MSE - Motion, Sound, Emotion). Bài Mini-Test 21 câu ngắn (15 – 20 phút) trực tiếp cùng CiC. Đăng ký qua link riêng của mình tại: ${referralUrl}`;
   }
-  return `Hello, here is your exclusive invitation to the 1-on-1 "CHUNKS Test 100" assessment (MSE Theory). 45-minute live session with CiC. Register via my link: ${referralUrl}`;
+  return `Hello, here is your exclusive invitation to the 1-on-1 "CHUNKS Test 100" assessment (MSE Theory). 21-question Mini-Test (15–20 minutes) live session with CiC. Register via my link: ${referralUrl}`;
 }

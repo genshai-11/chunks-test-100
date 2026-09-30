@@ -64,25 +64,25 @@ export const Navbar: React.FC<Props> = ({
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md hairline-b">
-      <div className="max-w-[1180px] mx-auto px-6 md:px-10 h-[68px] flex items-center justify-between gap-4">
-        {/* Brand Lockup: Red 15px square + CHUNKS wordmark */}
+      <div className="max-w-[1180px] mx-auto px-6 md:px-10 min-h-[80px] sm:min-h-[86px] py-2 flex items-center justify-between gap-4">
+        {/* Brand Lockup: Red square + CHUNKS wordmark */}
         <div
           onClick={() => {
             onSelectView('booking');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
+          className="flex items-center gap-3.5 cursor-pointer group select-none shrink-0"
         >
           <img
             src="/logo.png"
             alt="CHUNKS Logo"
-            className="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] object-contain shrink-0 transition-transform group-hover:scale-105"
+            className="w-[68px] h-[68px] sm:w-[76px] sm:h-[76px] object-contain shrink-0 transition-transform group-hover:scale-105"
           />
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[19px] sm:text-[21px] font-bold tracking-tight text-[#0a0a0a]">
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2">
+            <span className="text-[20px] sm:text-[23px] font-bold tracking-tight text-[#0a0a0a] leading-none">
               CHUNKS
             </span>
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-[#c81e16]">
+            <span className="text-[11px] sm:text-[11.5px] font-bold uppercase tracking-[0.22em] text-[#c81e16] leading-none">
               TEST 100
             </span>
           </div>
