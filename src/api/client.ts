@@ -41,9 +41,19 @@ export interface AdminCandidatesResponse {
 // Group A: Public / Candidate APIs
 // ----------------------------------------------------------------------
 
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    if (host.includes('web.app') || host.includes('firebaseapp.com')) {
+      return 'https://chunkstest.ai.studio';
+    }
+  }
+  return '';
+}
+
 export async function apiValidateReferral(code: string): Promise<ReferralValidationResponse> {
   const cleanCode = encodeURIComponent(code.trim().toUpperCase());
-  const res = await fetch(`/api/public/referral?code=${cleanCode}`);
+  const res = await fetch(`${getApiBaseUrl()}/api/public/referral?code=${cleanCode}`);
   if (!res.ok) throw new Error('Could not validate referral');
   return await res.json();
 }
@@ -51,7 +61,7 @@ export async function apiValidateReferral(code: string): Promise<ReferralValidat
 export async function apiRegisterCandidate(
   data: CandidateRegisterInput
 ): Promise<CandidateRegistrationResponse> {
-  const res = await fetch('/api/public/candidates/register', {
+  const res = await fetch(`${getApiBaseUrl()}/api/public/candidates/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -80,7 +90,7 @@ export async function apiGetHealth(): Promise<{
     details: string;
   };
 }> {
-  const res = await fetch('/api/health', { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/health`, { cache: 'no-store' });
   return await res.json();
 }
 
@@ -102,7 +112,7 @@ async function getAdminHeaders(_adminEmail: string) {
 }
 
 export async function apiGetAdminMetrics(adminEmail: string): Promise<AdminMetricsResponse> {
-  const res = await fetch('/api/admin/metrics', {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/metrics`, {
     headers: await getAdminHeaders(adminEmail),
   });
 
@@ -135,7 +145,7 @@ export async function apiGetAdminCandidates(
     search: params.search || '',
   });
 
-  const res = await fetch(`/api/admin/candidates?${queryParams.toString()}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/candidates?${queryParams.toString()}`, {
     headers: await getAdminHeaders(adminEmail),
     cache: 'no-store',
   });
@@ -157,7 +167,7 @@ export async function apiUpdateCandidateStatus(
   status: CandidateStatus,
   notes?: string
 ): Promise<{ success: boolean; candidate: Candidate }> {
-  const res = await fetch(`/api/admin/candidates/${candidateId}/status`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/candidates/${candidateId}/status`, {
     method: 'PATCH',
     headers: await getAdminHeaders(adminEmail),
     body: JSON.stringify({
@@ -186,7 +196,7 @@ export async function apiCreateChunker(
     notes?: string;
   }
 ): Promise<{ success: boolean; chunker: Chunker }> {
-  const res = await fetch('/api/admin/chunkers', {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/chunkers`, {
     method: 'POST',
     headers: await getAdminHeaders(adminEmail),
     body: JSON.stringify(data),
@@ -207,7 +217,7 @@ export async function apiCreateChunker(
 export async function apiGetAdminChunkers(
   adminEmail: string
 ): Promise<{ chunkers: Chunker[] }> {
-  const res = await fetch('/api/admin/chunkers', {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/chunkers`, {
     headers: await getAdminHeaders(adminEmail),
   });
 
@@ -247,7 +257,7 @@ export interface AdminNotificationSettingsResponse {
 export async function apiGetNotificationSettings(
   adminEmail: string
 ): Promise<AdminNotificationSettingsResponse> {
-  const res = await fetch('/api/admin/settings/notifications', {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/settings/notifications`, {
     headers: await getAdminHeaders(adminEmail),
   });
 
@@ -269,7 +279,7 @@ export async function apiSaveNotificationSettings(
     enabled: boolean;
   }
 ): Promise<{ success: boolean; message: string; settings: any }> {
-  const res = await fetch('/api/admin/settings/notifications', {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/settings/notifications`, {
     method: 'POST',
     headers: await getAdminHeaders(adminEmail),
     body: JSON.stringify(settings),
@@ -290,7 +300,7 @@ export async function apiSaveNotificationSettings(
 export async function apiSendTestNotification(
   adminEmail: string
 ): Promise<{ success: boolean; message: string; testLog: any }> {
-  const res = await fetch('/api/admin/notifications/test', {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/notifications/test`, {
     method: 'POST',
     headers: await getAdminHeaders(adminEmail),
   });
@@ -311,7 +321,7 @@ export async function apiResendConfirmationEmail(
   adminEmail: string,
   candidateId: string
 ): Promise<{ success: boolean; message: string; candidate: any }> {
-  const res = await fetch(`/api/admin/candidates/${candidateId}/resend-confirmation`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/candidates/${candidateId}/resend-confirmation`, {
     method: 'POST',
     headers: await getAdminHeaders(adminEmail),
   });

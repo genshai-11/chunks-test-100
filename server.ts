@@ -59,8 +59,25 @@ async function adminAuthMiddleware(req: AuthenticatedRequest, res: Response, nex
 async function startServer() {
   const app = express();
   app.set('trust proxy', true);
+  const ALLOWED_ORIGINS = [
+    'https://chunkstest.web.app',
+    'https://chunkstest.firebaseapp.com',
+    'https://fourth-vehicle-452610-a1.web.app',
+    'https://fourth-vehicle-452610-a1.firebaseapp.com',
+    'https://chunkstest.ai.studio',
+  ];
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Vary', 'Origin');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
   app.use(express.json());
-
   // Cloud Scheduler must call this endpoint with an OIDC token for the Cloud
   // Run service audience. A regular request does not authorize outbox work.
   app.post('/api/internal/drain-email-outbox', async (req: Request, res: Response) => {
