@@ -10,7 +10,10 @@ import {
   ShieldCheck,
   UserCheck,
   QrCode,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { TestType, AgeRange, AssessmentInfo } from '../types';
 import { TIME_SLOT_OPTIONS, GREEN_TEST_INFO, RED_TEST_INFO } from '../constants/initialData';
 import { apiValidateReferral, apiRegisterCandidate } from '../api/client';
@@ -230,7 +233,12 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
   return (
     <div className="w-full text-[#0a0a0a]">
       {/* 1. Hero Masthead: 12-Column Swiss Grid */}
-      <section className="w-full hairline-b">
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="w-full hairline-b"
+      >
         <div className="max-w-[1180px] mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-12 gap-x-6 pt-16 md:pt-24 pb-14 md:pb-16">
           {/* Left Column (col-span-3): Micro Eyebrow */}
           <div className="col-span-12 md:col-span-3 mb-6 md:mb-0">
@@ -258,10 +266,9 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
             <p className="max-w-[48ch] text-[16px] md:text-[17px] text-[#0a0a0a]/65 leading-relaxed mt-6 font-normal tracking-[-0.011em]">
               {lang === 'vi'
-                ? 'Khám phá cách bạn duy trì sự chú ý hoặc ứng biến khi nói dưới áp lực qua Chuyển động, Âm thanh và Cảm xúc (MSE). Buổi đánh giá trực tiếp 1-on-1, 45 phút cùng Chunker-in-Charge. Chương trình thử nghiệm hướng tới 100 lượt đăng ký đủ điều kiện.'
-                : 'Explore how you sustain attention or improvise while speaking under pressure through Motion, Sound and Emotion (MSE). A live, 45-minute 1-on-1 assessment with a Chunker-in-Charge. This pilot aims for 100 qualified registrations.'}
+                ? 'Khám phá cách bạn duy trì sự chú ý hoặc ứng biến khi nói dưới áp lực qua Chuyển động, Âm thanh và Cảm xúc (MSE). Buổi đánh giá trực tiếp 1-on-1, 15-20 phút cùng Chunker-in-Charge. Chương trình thử nghiệm hướng tới 100 lượt đăng ký đủ điều kiện.'
+                : 'Explore how you sustain attention or improvise while speaking under pressure through Motion, Sound and Emotion (MSE). A live, 15-20 minute 1-on-1 assessment with a Chunker-in-Charge. This pilot aims for 100 qualified registrations.'}
             </p>
-
             {/* Campaign Call-to-Actions in Hero */}
             <div className="flex flex-wrap items-center gap-3 mt-6">
               <button
@@ -306,14 +313,49 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 2. Inverted Feature Specimen Rule */}
       <ChunksFeatureBand />
 
       {/* 3. Form-First Candidate Registration Section */}
       <section id="booking-form" className="scroll-mt-24 max-w-[1180px] mx-auto px-6 md:px-10 py-16 md:py-24">
-        {/* Inviter Greeting Banner: ONLY shown when a valid referral code and real inviter are verified */}
+        {/* Introductory Banner: About CHUNKS & Mini-Test format */}
+        <div className="mb-8 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50/70 rounded-none space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="CHUNKS" className="w-5 h-5 object-contain" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
+                CHUNKS TEST 100 · KHẢO SÁT PHẢN XẠ NGÔN NGỮ (MSE)
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <a
+                href="https://the-chunks.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-[rgba(10,10,10,0.15)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors"
+              >
+                <span>the-chunks.com</span>
+                <ExternalLink className="w-3 h-3 text-[#c81e16]" />
+              </a>
+              <a
+                href="https://chunkstheory.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-[rgba(10,10,10,0.15)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors"
+              >
+                <span>chunkstheory.com</span>
+                <ExternalLink className="w-3 h-3 text-[#c81e16]" />
+              </a>
+            </div>
+          </div>
+          <p className="text-[13.5px] text-[#0a0a0a]/75 font-light leading-relaxed max-w-3xl">
+            {lang === 'vi'
+              ? 'Bài Mini-Test 21 câu (15 – 20 phút) diễn ra trực tiếp (Offline 1-on-1) cùng chuyên viên CiC nhằm khảo sát năng lực phối hợp có ý thức giữa Thân – Khẩu – Ý qua phương pháp MSE trong thời gian thực. Không chấm điểm lý thuyết, đo lường phản xạ tự nhiên của bạn.'
+              : 'The 21-question Mini-Test (15–20 minutes) is conducted 1-on-1 in-person with a CiC to map your real speech reflex across Motion, Sound, and Emotion (MSE). Zero textbook grammar scoring; measuring authentic spontaneous reflex.'}
+          </p>
+        </div>
         {Boolean(referralCode.trim() && isCodeValid && inviterName) && (
           <div className="mb-10 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -632,9 +674,13 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               {/* 2. Test Selection (Green vs Red Radio Cards) */}
               <div id="test-options" className="space-y-4 scroll-mt-24">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  02. {lang === 'vi' ? 'CHỌN BÀI TEST ƯU TIÊN' : 'SELECT PRIORITY ASSESSMENT'}
+                  02. {lang === 'vi' ? 'ĐỊNH HƯỚNG PHẢN XẠ MONG MUỐN' : 'SELECT REFLEX FOCUS'}
                 </span>
-
+                <p className="text-[13px] text-[#0a0a0a]/70 font-light -mt-2">
+                  {lang === 'vi'
+                    ? 'Mặc định bài test là Mini-Test 21 câu ngắn toàn diện (15 - 20 phút). Bạn có thể chọn trọng tâm muốn chuyên viên CiC lưu ý hơn:'
+                    : 'The standard assessment is a 21-question mini-test (15-20 min). Select the primary reflex stream for the CiC to observe:'}
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Card 1: Green Test */}
                   <div
@@ -804,12 +850,12 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               {/* 3. Availability Calendar Picker */}
               <div className="space-y-4">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  03. {lang === 'vi' ? 'GHI NHẬN THỜI GIAN MONG MUỐN DỰ KIẾN (LỊCH OFFLINE)' : 'SELECT DESIRED EXPECTED TIME (OFFLINE)'}
+                  03. {lang === 'vi' ? 'CHỌN NGÀY & KHUNG GIỜ ĐÁNH GIÁ' : 'SELECT DATE & TIME WINDOW'}
                 </span>
-                <p className="text-[12.5px] text-[#0a0a0a]/65 font-light -mt-2">
+                <p className="text-[13px] text-[#0a0a0a]/75 font-normal -mt-2">
                   {lang === 'vi'
-                    ? 'Thời gian bạn chọn là khung giờ dự kiến mong muốn. Điều phối viên CHUNKS sẽ liên hệ xác nhận lịch hẹn chính thức tại cơ sở.'
-                    : 'The selected slot records your preferred window. Operations will contact you to finalize the in-person appointment.'}
+                    ? 'Thời lượng 20 phút với Chunker-in-Charge (CiC). Lịch đã chọn là thời gian mong muốn dự kiến và được đồng bộ trực tiếp lên hệ thống Firestore.'
+                    : 'Duration: 20 minutes with a Chunker-in-Charge (CiC). The selected schedule is synced directly to the Firestore database.'}
                 </p>
 
                 {/* Interactive Monthly/Daily Calendar and Slot Picker */}

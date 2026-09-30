@@ -61,6 +61,29 @@ class DatabaseService {
     return chunker;
   }
 
+  async updateChunker(code: string, data: { name?: string; email?: string; active?: boolean; notes?: string }): Promise<Chunker> {
+    const cleanCode = code.trim().toUpperCase();
+    const ref = this.db.collection('chunkers').doc(cleanCode);
+    const snap = await ref.get();
+    if (!snap.exists) throw new Error('Chunker not found');
+    const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (data.name !== undefined) updates.name = data.name.trim();
+    if (data.email !== undefined) updates.email = data.email.trim().toLowerCase();
+    if (data.active !== undefined) updates.active = Boolean(data.active);
+    if (data.notes !== undefined) updates.notes = data.notes.trim();
+    await ref.update(updates);
+    return { id: cleanCode, ...snap.data(), ...updates } as Chunker;
+  }
+
+  async deleteChunker(code: string): Promise<boolean> {
+    const cleanCode = code.trim().toUpperCase();
+    const ref = this.db.collection('chunkers').doc(cleanCode);
+    const snap = await ref.get();
+    if (!snap.exists) throw new Error('Chunker not found');
+    await ref.delete();
+    return true;
+  }
+
   async registerCandidate(input: Candidate): Promise<Candidate> {
     const db = this.db;
     const now = new Date();
@@ -93,11 +116,27 @@ class DatabaseService {
       tx.create(candidateRef, Object.fromEntries(Object.entries(candidate).filter(([, value]) => value !== undefined)));
       tx.set(lockRef, { lastRegistrationAt: now.getTime(), candidateId: candidateRef.id });
       tx.update(stateRef, { totalRegistered: total + 1, greenCount: (state.get('greenCount') || 0) + Number(candidate.testType === 'green'), redCount: (state.get('redCount') || 0) + Number(candidate.testType === 'red') });
-      tx.update(ref, { referralCount: (chunker.get('referralCount') || 0) + 1 });
+      const newReferralCount = (chunker.get('referralCount') || 0) + 1;
+      tx.update(ref, { referralCount: newReferralCount });
       tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_candidate`), { candidateId: candidateRef.id, kind: 'candidate', recipients: [candidate.email], status: 'pending', attempts: 0, nextAttemptAt: now.getTime(), createdAt: now.toISOString() });
       const recipients = settings.get('notificationEmails');
       if (settings.get('enabled') === true && Array.isArray(recipients) && recipients.length) {
         tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_admin`), { candidateId: candidateRef.id, kind: 'admin', recipients, status: 'pending', attempts: 0, nextAttemptAt: now.getTime(), createdAt: now.toISOString() });
+      }
+      const chunkerEmail = chunker.get('email');
+      if (typeof chunkerEmail === 'string' && chunkerEmail.includes('@') && code !== 'PILOT100') {
+        tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_referral`), {
+          candidateId: candidateRef.id,
+          kind: 'referral',
+          recipients: [chunkerEmail],
+          chunkerCode: code,
+          chunkerName: chunker.get('name') || code,
+          referralCount: newReferralCount,
+          status: 'pending',
+          attempts: 0,
+          nextAttemptAt: now.getTime(),
+          createdAt: now.toISOString(),
+        });
       }
       return candidate;
     });

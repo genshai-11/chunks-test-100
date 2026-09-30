@@ -6,7 +6,7 @@
  * or the active live deployment URL.
  */
 
-export const DEFAULT_PRODUCTION_DOMAIN = 'https://chunkstest.ai.studio';
+export const DEFAULT_PRODUCTION_DOMAIN = 'https://chunkstest.web.app';
 const STORAGE_KEY = 'chunks_referral_domain_override';
 
 export interface DomainOption {

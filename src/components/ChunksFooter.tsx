@@ -36,9 +36,9 @@ export const ChunksFooter: React.FC<Props> = ({
               <img
                 src="/logo.png"
                 alt="CHUNKS Logo"
-                className="w-[18px] h-[18px] object-contain shrink-0"
+                className="w-[32px] h-[32px] sm:w-[36px] sm:h-[36px] object-contain shrink-0"
               />
-              <span className="text-[16px] font-semibold tracking-[-0.02em] text-[#0a0a0a]">
+              <span className="text-[19px] sm:text-[21px] font-bold tracking-tight text-[#0a0a0a]">
                 CHUNKS TEST 100
               </span>
             </button>

@@ -71,18 +71,18 @@ export const Navbar: React.FC<Props> = ({
             onSelectView('booking');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="flex items-center gap-2.5 cursor-pointer group select-none shrink-0"
+          className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
         >
           <img
             src="/logo.png"
             alt="CHUNKS Logo"
-            className="w-[20px] h-[20px] object-contain shrink-0"
+            className="w-[34px] h-[34px] sm:w-[38px] sm:h-[38px] object-contain shrink-0 transition-transform group-hover:scale-105"
           />
-          <div className="flex items-baseline gap-2">
-            <span className="text-[16px] font-semibold tracking-[-0.02em] text-[#0a0a0a]">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[19px] sm:text-[21px] font-bold tracking-tight text-[#0a0a0a]">
               CHUNKS
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#c81e16]">
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-[#c81e16]">
               TEST 100
             </span>
           </div>

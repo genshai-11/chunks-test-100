@@ -250,6 +250,47 @@ export async function apiGetAdminChunkers(
   return await res.json();
 }
 
+export async function apiUpdateChunker(
+  adminEmail: string,
+  code: string,
+  data: {
+    name?: string;
+    email?: string;
+    active?: boolean;
+    notes?: string;
+  }
+): Promise<{ success: boolean; chunker: Chunker }> {
+  const cleanCode = encodeURIComponent(code.trim().toUpperCase());
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/chunkers/${cleanCode}`, {
+    method: 'PATCH',
+    headers: await getAdminHeaders(adminEmail),
+    body: JSON.stringify(data),
+  });
+  if (res.status === 403) throw new Error('403 Forbidden: Not authorized to update Chunker.');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update chunker');
+  }
+  return await res.json();
+}
+
+export async function apiDeleteChunker(
+  adminEmail: string,
+  code: string
+): Promise<{ success: boolean; message: string }> {
+  const cleanCode = encodeURIComponent(code.trim().toUpperCase());
+  const res = await fetch(`${getApiBaseUrl()}/api/admin/chunkers/${cleanCode}`, {
+    method: 'DELETE',
+    headers: await getAdminHeaders(adminEmail),
+  });
+  if (res.status === 403) throw new Error('403 Forbidden: Not authorized to delete Chunker.');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete chunker');
+  }
+  return await res.json();
+}
+
 export interface AdminNotificationSettingsResponse {
   settings: {
     notificationEmails: string[];

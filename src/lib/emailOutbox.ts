@@ -8,8 +8,11 @@ const MAX_ATTEMPTS = 8;
 
 interface OutboxJob {
   candidateId: string;
-  kind: 'candidate' | 'admin';
+  kind: 'candidate' | 'admin' | 'referral';
   recipients: string[];
+  chunkerCode?: string;
+  chunkerName?: string;
+  referralCount?: number;
   status: 'pending' | 'failed' | 'processing' | 'accepted';
   attempts: number;
   nextAttemptAt: number;
@@ -46,6 +49,26 @@ async function processJob(id: string): Promise<void> {
         chunkerName: candidate.chunkerName, createdAt: candidate.createdAt,
       });
       result = await sendEmail({ to: job.recipients, ...content, idempotencyKey: id });
+    } else if (job.kind === 'referral') {
+      const subject = `[CHUNKS Alert] Ứng viên mới đăng ký qua mã ${candidate.chunkerCode} của bạn!`;
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e4e4e7; background: #ffffff;">
+          <div style="font-size: 11px; font-weight: 700; color: #c81e16; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px;">
+            CHUNKEE REFERRAL · THÔNG BÁO TỰ ĐỘNG
+          </div>
+          <h2 style="font-size: 19px; font-weight: 700; color: #0a0a0a; margin: 0 0 16px 0;">
+            Chúc mừng! Đã có ứng viên mới đăng ký qua link của bạn
+          </h2>
+          <div style="background: #fafafa; padding: 16px; border: 1px solid #f4f4f5; margin-bottom: 16px; font-size: 14px; line-height: 1.6;">
+            <p style="margin: 0 0 8px 0;">Xin chào <strong>${candidate.chunkerName || 'Chunkee'}</strong>,</p>
+            <p style="margin: 0 0 8px 0;">Ứng viên <strong>${candidate.fullName}</strong> vừa hoàn tất đăng ký giữ chỗ tham gia Mini-Test 21 câu qua mã giới thiệu <strong>${candidate.chunkerCode}</strong> của bạn.</p>
+            <p style="margin: 0;">Tổng số lượt ứng viên đã đăng ký qua mã của bạn hiện tại là: <strong style="color: #c81e16; font-size: 16px;">${job.referralCount || '1'}</strong> lượt.</p>
+          </div>
+          <p style="font-size: 13px; color: #71717a; margin: 0;">Cảm ơn bạn đã đồng hành và lan tỏa phương pháp đánh giá phản xạ CHUNKS!</p>
+        </div>
+      `;
+      const text = `Chúc mừng ${candidate.chunkerName || 'Chunkee'}! Ứng viên ${candidate.fullName} vừa đăng ký qua mã ${candidate.chunkerCode} của bạn. Tổng số lượt đăng ký hiện tại là: ${job.referralCount || 1}.`;
+      result = await sendEmail({ to: job.recipients, subject, html, text, idempotencyKey: id });
     } else {
       result = await sendAdminNewCandidateNotification(candidate, job.recipients, id);
     }
@@ -87,11 +110,11 @@ async function processJob(id: string): Promise<void> {
     });
   }
 }
-
 export async function processCandidateEmailOutbox(candidateId: string): Promise<void> {
   await Promise.all([
     processJob(`${candidateId}_candidate`),
     processJob(`${candidateId}_admin`),
+    processJob(`${candidateId}_referral`),
   ]);
 }
 

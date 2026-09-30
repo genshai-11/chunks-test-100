@@ -323,6 +323,24 @@ async function startServer() {
     try { return res.json({ chunkers: await dbService.getChunkers() }); }
     catch { return res.status(503).json({ error: 'Campaign database unavailable' }); }
   });
+  app.patch('/api/admin/chunkers/:code', adminAuthMiddleware, async (req: Request, res: Response) => {
+    try {
+      const chunker = await dbService.updateChunker(req.params.code, req.body);
+      return res.json({ success: true, chunker });
+    } catch (err: any) {
+      return res.status(err.message === 'Chunker not found' ? 404 : 503).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/chunkers/:code', adminAuthMiddleware, async (req: Request, res: Response) => {
+    try {
+      await dbService.deleteChunker(req.params.code);
+      return res.json({ success: true, message: 'Chunker deleted successfully' });
+    } catch (err: any) {
+      return res.status(err.message === 'Chunker not found' ? 404 : 503).json({ error: err.message });
+    }
+  });
+
 
   app.get('/api/admin/settings/notifications', adminAuthMiddleware, async (_req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');

@@ -19,6 +19,8 @@ import {
   Save,
   Eye,
   CheckCircle2,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { signInAdminWithGoogle, signOutAdmin } from '../firebase/services';
@@ -27,6 +29,8 @@ import {
   apiGetAdminCandidates,
   apiUpdateCandidateStatus,
   apiCreateChunker,
+  apiUpdateChunker,
+  apiDeleteChunker,
   apiGetAdminChunkers,
   apiGetNotificationSettings,
   apiSaveNotificationSettings,
@@ -87,6 +91,14 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   const [creatingChunker, setCreatingChunker] = useState(false);
   const [newChunkerError, setNewChunkerError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  // Edit Chunker state
+  const [editingChunker, setEditingChunker] = useState<Chunker | null>(null);
+  const [editChunkerName, setEditChunkerName] = useState('');
+  const [editChunkerEmail, setEditChunkerEmail] = useState('');
+  const [editChunkerActive, setEditChunkerActive] = useState(true);
+  const [editChunkerNotes, setEditChunkerNotes] = useState('');
+  const [savingChunkerEdit, setSavingChunkerEdit] = useState(false);
+  const [editChunkerError, setEditChunkerError] = useState<string | null>(null);
 
   // Whitelist check
   const activeEmail = currentUser?.email || '';
@@ -274,6 +286,45 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
       setNewChunkerError(err.message || 'Failed to create Chunkee account');
     } finally {
       setCreatingChunker(false);
+    }
+  };
+  const handleOpenEditChunker = (ch: Chunker) => {
+    setEditingChunker(ch);
+    setEditChunkerName(ch.name);
+    setEditChunkerEmail(ch.email);
+    setEditChunkerActive(ch.active !== false);
+    setEditChunkerNotes(ch.notes || '');
+    setEditChunkerError(null);
+  };
+
+  const handleSaveChunkerEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingChunker || !editChunkerName.trim() || !editChunkerEmail.trim()) return;
+    setSavingChunkerEdit(true);
+    setEditChunkerError(null);
+    try {
+      const res = await apiUpdateChunker(activeEmail, editingChunker.code, {
+        name: editChunkerName.trim(),
+        email: editChunkerEmail.trim(),
+        active: editChunkerActive,
+        notes: editChunkerNotes.trim(),
+      });
+      setChunkers((prev) => prev.map((c) => (c.code === res.chunker.code ? res.chunker : c)));
+      setEditingChunker(null);
+    } catch (err: any) {
+      setEditChunkerError(err.message || 'Failed to update Chunkee');
+    } finally {
+      setSavingChunkerEdit(false);
+    }
+  };
+
+  const handleDeleteChunker = async (code: string, name: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa vĩnh viễn Chunkee "${name}" (${code})?`)) return;
+    try {
+      await apiDeleteChunker(activeEmail, code);
+      setChunkers((prev) => prev.filter((c) => c.code !== code));
+    } catch (err: any) {
+      alert(`Không thể xóa Chunkee: ${err.message}`);
     }
   };
 
@@ -872,9 +923,9 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
             </h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Domain: {getActiveReferralDomain()}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono bg-slate-50 text-[#0a0a0a] border border-[rgba(10,10,10,0.15)] font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#c81e16] animate-pulse" />
+              MN107.V2.1 / CONSCIOUS PERFORMANCE (Powered by chunks theory)
             </span>
           </div>
         </div>
@@ -888,6 +939,7 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                 <th className="py-2.5 pr-4">Email</th>
                 <th className="py-2.5 pr-4">Link Giới Thiệu</th>
                 <th className="py-2.5 text-right">Referral Tally</th>
+                <th className="py-2.5 text-center">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgba(10,10,10,0.08)]">
@@ -929,6 +981,26 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                     </td>
                     <td className="py-3 text-right font-mono font-bold tabular-nums text-[#0a0a0a]">
                       {ch.referralCount || 0}
+                    </td>
+                    <td className="py-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditChunker(ch)}
+                          className="p-1.5 border border-[rgba(10,10,10,0.15)] hover:border-[#0a0a0a] hover:bg-slate-100 text-[#0a0a0a] rounded transition-colors cursor-pointer"
+                          title="Chỉnh sửa Chunkee"
+                        >
+                          <Edit2 className="w-3 h-3 text-slate-700" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteChunker(ch.code, ch.name)}
+                          className="p-1.5 border border-rose-200 hover:border-rose-400 hover:bg-rose-50 text-rose-600 rounded transition-colors cursor-pointer"
+                          title="Xóa Chunkee"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -1024,6 +1096,103 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                   className="px-5 py-2 bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[12.5px] font-semibold rounded-full cursor-pointer disabled:opacity-50"
                 >
                   {creatingChunker ? 'Saving...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Chunker Modal */}
+      {editingChunker && (
+        <div className="fixed inset-0 z-50 bg-[#0a0a0a]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white border border-[rgba(10,10,10,0.14)] p-6 sm:p-8 relative">
+            <div className="flex items-start justify-between border-b border-[rgba(10,10,10,0.14)] pb-4">
+              <div className="flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-[#c81e16]" />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#0a0a0a]">
+                  Chỉnh Sửa Chunkee · {editingChunker.code}
+                </span>
+              </div>
+              <button
+                onClick={() => setEditingChunker(null)}
+                className="text-[#0a0a0a]/50 hover:text-[#0a0a0a] p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {editChunkerError && (
+              <div className="mt-4 p-2.5 bg-rose-50 border border-rose-200 text-[#c81e16] text-xs">
+                {editChunkerError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveChunkerEdit} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editChunkerName}
+                  onChange={(e) => setEditChunkerName(e.target.value)}
+                  className="w-full px-3 py-2 border border-[rgba(10,10,10,0.2)] text-[13.5px] focus:outline-none focus:border-[#c81e16]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={editChunkerEmail}
+                  onChange={(e) => setEditChunkerEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-[rgba(10,10,10,0.2)] text-[13.5px] focus:outline-none focus:border-[#c81e16]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70 mb-1">
+                  Ghi chú (Notes)
+                </label>
+                <input
+                  type="text"
+                  value={editChunkerNotes}
+                  onChange={(e) => setEditChunkerNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-[rgba(10,10,10,0.2)] text-[13.5px] focus:outline-none focus:border-[#c81e16]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="editChunkerActive"
+                  checked={editChunkerActive}
+                  onChange={(e) => setEditChunkerActive(e.target.checked)}
+                  className="w-4 h-4 accent-[#c81e16] cursor-pointer"
+                />
+                <label htmlFor="editChunkerActive" className="text-xs font-medium text-[#0a0a0a] cursor-pointer select-none">
+                  Kích hoạt mã giới thiệu này (Active)
+                </label>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingChunker(null)}
+                  className="px-4 py-2 border border-[rgba(10,10,10,0.2)] text-[12.5px] font-medium rounded-full cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingChunkerEdit}
+                  className="px-5 py-2 bg-[#0a0a0a] hover:bg-[#c81e16] text-white text-[12.5px] font-semibold rounded-full cursor-pointer disabled:opacity-50"
+                >
+                  {savingChunkerEdit ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
