@@ -97,7 +97,7 @@ export const BookingSuccessModal: React.FC<Props> = ({
             <div className="flex items-center justify-between">
               <span className="text-[#0a0a0a]/60">{lang === 'vi' ? 'Bài test' : 'Assessment'}:</span>
               <span className="font-semibold text-[#0a0a0a]">
-                {isGreen ? 'Green Test (%c Focus)' : 'Red Test (%r Improv)'}
+                 {candidate.testType === 'general' ? (lang === 'vi' ? 'Mini-Test 21 câu' : '21-question Mini-Test') : isGreen ? 'Green Test (%c Focus)' : 'Red Test (%r Improv)'}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -110,7 +110,7 @@ export const BookingSuccessModal: React.FC<Props> = ({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[#0a0a0a]/60">{lang === 'vi' ? 'Khung giờ' : 'Time Window'}:</span>
-              <span className="font-mono text-[#0a0a0a]">{candidate.preferredSlots}</span>
+               <span className="font-mono text-[#0a0a0a] text-right max-w-[60%] break-words">{candidate.preferredSlots}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[#0a0a0a]/60">{lang === 'vi' ? 'Người giới thiệu' : 'Invited By'}:</span>

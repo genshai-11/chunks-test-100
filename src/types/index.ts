@@ -1,4 +1,4 @@
-export type TestType = 'green' | 'red';
+export type TestType = 'green' | 'red' | 'general';
 
 export type TestLevel = 'easy' | 'hard';
 
@@ -60,7 +60,7 @@ export interface TimeSlotOption {
 }
 
 export interface AssessmentInfo {
-  type: TestType;
+  type: 'green' | 'red';
   titleVi: string;
   titleEn: string;
   subtitleVi: string;

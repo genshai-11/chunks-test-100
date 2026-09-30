@@ -87,6 +87,29 @@ async function runTests() {
     assert.equal(parsedHard.testLevel, 'hard');
   });
 
+  await test('Registration without test type defaults to a general Mini-Test and preserves time note', () => {
+    const request = {
+      fullName: 'Nguyễn Văn An', phone: '0903123456', email: 'an@example.com',
+      ageRange: '25-34', occupation: 'Designer',
+      testLevel: 'hard', preferredTimeSlot: 'Chiều thứ Bảy nếu thuận tiện',
+    };
+    const server = candidateRegisterSchema.parse(request);
+    const client = createCandidateRegistrationSchema('vi').parse(request);
+    assert.equal(server.testType, 'general');
+    assert.equal(client.testType, 'general');
+    assert.equal(client.testLevel, 'hard');
+    assert.equal(server.selectedDate, undefined);
+    assert.equal(server.preferredTimeSlot, request.preferredTimeSlot);
+    assert.equal(candidateRegisterSchema.parse({ ...request, testType: 'GREEN_TEST' }).testType, 'GREEN_TEST');
+    const email = generateCandidateEmailContent({
+      candidateId: 'sample', fullName: request.fullName, phone: request.phone,
+      email: request.email, testType: 'general', testLevel: 'hard',
+      preferredSlots: request.preferredTimeSlot,
+    });
+    assert.match(email.text, /Mini-Test 21 câu/);
+    assert.doesNotMatch(email.text, /Green Focus Test|Red Improvisation Test/);
+  });
+
   await test('Candidate registration schema rejects invalid or spam payload', () => {
     const invalidPhone = candidateRegisterSchema.safeParse({
       fullName: 'Valid Name',
@@ -215,7 +238,7 @@ async function runTests() {
       if (!chunker?.exists || chunker?.active !== true) throw new RegistrationError('INVALID_REFERRAL');
       const total = state.totalRegistered;
       if (!Number.isInteger(total) || total < 0 || total > 100 ||
-        state.greenCount + state.redCount !== total) throw new RegistrationError('MIGRATION_REQUIRED');
+        state.greenCount + state.redCount > total) throw new RegistrationError('MIGRATION_REQUIRED');
       if (total >= 100) throw new RegistrationError('CAPACITY_FULL');
       const lastRegistrationAt = lock?.lastRegistrationAt;
       if (lock?.exists && (!Number.isInteger(lastRegistrationAt) || lastRegistrationAt > now ||

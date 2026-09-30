@@ -39,12 +39,12 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
   },
   {
     number: '04',
-    questionVi: 'Khung giờ chọn trên biểu mẫu có phải là lịch hẹn chính thức?',
-    questionEn: 'Is the time slot selected on the form considered the confirmed appointment?',
+    questionVi: 'Ghi chú thời gian trên biểu mẫu có phải lịch hẹn chính thức?',
+    questionEn: 'Is the time note on the form a confirmed appointment?',
     answerVi:
-      'Khung giờ trên lịch đăng ký là thời gian mong muốn dự kiến của bạn. Sau khi nhận được thông tin, điều phối viên CHUNKS sẽ chủ động gọi điện hoặc nhắn tin Zalo để thống nhất lịch hẹn trực tiếp chính thức và gửi hướng dẫn cụ thể trước buổi gặp.',
+      'Không. Ghi chú chỉ giúp chúng tôi biết thời gian bạn có thể sắp xếp. Sau khi nhận đăng ký, đội ngũ CHUNKS sẽ gọi điện hoặc nhắn Zalo để thống nhất lịch hẹn trực tiếp và địa điểm.',
     answerEn:
-      'The calendar selection records your desired expected window. Upon receiving your booking, CHUNKS operations will reach out via phone or Zalo to confirm the final in-person appointment and share venue instructions.',
+      'No. The note simply lets us know when you might be available. CHUNKS operations will call or message you via Zalo to agree on the in-person appointment and venue.',
   },
   {
     number: '05',
@@ -69,9 +69,9 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
     questionVi: 'Thông tin cá nhân (SĐT, Email) của tôi được bảo vệ như thế nào?',
     questionEn: 'How are my contact details and diagnostic notes protected?',
     answerVi:
-      'Thông tin cá nhân được mã hóa và bảo mật nghiêm ngặt trên hệ thống cơ sở dữ liệu máy chủ, chỉ phục vụ duy nhất việc điều phối lịch hẹn và thông báo kết quả 1-on-1 giữa bạn và CiC; CHUNKS cam kết tuyệt đối không chia sẻ dữ liệu cho bên thứ ba.',
+      'Thông tin liên hệ được lưu trên máy chủ và chỉ bộ phận được phân quyền sử dụng để điều phối buổi đánh giá, gửi xác nhận và trao đổi với bạn.',
     answerEn:
-      'Personal information is strictly encrypted and protected on our backend database, used solely for session coordination and 1-on-1 diagnostic reporting between you and your CiC; CHUNKS never shares your data with third parties.',
+      'Contact details are stored on the server and used by authorized staff to coordinate the assessment, send confirmation and follow up with you.',
   },
 ];
 

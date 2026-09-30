@@ -158,10 +158,8 @@ export async function sendAdminNewCandidateNotification(
   }
 
   try {
-    const testName =
-      candidate.testType === 'green'
-        ? 'Green Focus Test (%c)'
-        : 'Red Improvisation Test (%r)';
+    const testName = candidate.testType === 'general' ? 'Mini-Test 21 câu (chưa phân nhánh)' :
+      candidate.testType === 'green' ? 'Green Focus Test (%c)' : 'Red Improvisation Test (%r)';
     const levelName = candidate.testLevel === 'hard' ? 'Khó (Advanced)' : 'Dễ (Foundation)';
 
     const subject = `[CHUNKS Alert] Ứng viên mới đăng ký: ${candidate.fullName} — ${testName} (Level: ${levelName})`;
@@ -180,8 +178,8 @@ export async function sendAdminNewCandidateNotification(
           <p style="margin: 0 0 8px 0;"><strong>Số điện thoại:</strong> ${escapeHtml(candidate.phone)}</p>
           <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${escapeHtml(candidate.email)}</p>
           <p style="margin: 0 0 8px 0;"><strong>Nghề nghiệp:</strong> ${escapeHtml(candidate.occupation)} (${escapeHtml(candidate.ageRange)})</p>
-          <p style="margin: 0 0 8px 0;"><strong>Bài test:</strong> <span style="color: ${candidate.testType === 'green' ? '#047857' : '#c81e16'}; font-weight: 700;">${testName}</span> (Level: ${levelName})</p>
-          <p style="margin: 0 0 8px 0;"><strong>Khung giờ chọn:</strong> <strong>${escapeHtml(candidate.preferredSlots)}</strong></p>
+           <p style="margin: 0 0 8px 0;"><strong>Bài đánh giá:</strong> <span style="color: ${candidate.testType === 'green' ? '#047857' : candidate.testType === 'red' ? '#c81e16' : '#27272a'}; font-weight: 700;">${testName}</span> (Level: ${levelName})</p>
+           <p style="margin: 0 0 8px 0;"><strong>Ghi chú thời gian:</strong> <strong>${escapeHtml(candidate.preferredSlots)}</strong></p>
           <p style="margin: 0;"><strong>Mã giới thiệu:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(candidate.chunkerCode)}</span> (${escapeHtml(candidate.chunkerName || 'Pilot allocation')})</p>
         </div>
 

@@ -487,7 +487,7 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
               />
             </div>
             <span className="text-[11px] text-[#0a0a0a]/50 font-mono tabular-nums mt-1.5 block">
-              {Math.round((metrics.totalRegistered / metrics.target) * 100)}% capacity achieved
+               {Math.round((metrics.totalRegistered / metrics.target) * 100)}% {lang === 'vi' ? 'chỉ tiêu' : 'of target'} · {metrics.totalRegistered - metrics.greenCount - metrics.redCount} {lang === 'vi' ? 'Mini-Test chưa phân nhánh' : 'unassigned Mini-Tests'}
             </span>
           </div>
 
@@ -602,7 +602,8 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
             >
               <option value="ALL">All Tests</option>
               <option value="GREEN">Green Test</option>
-              <option value="RED">Red Test</option>
+               <option value="RED">Red Test</option>
+               <option value="GENERAL">Mini-Test (unassigned)</option>
             </select>
 
             {/* Test Level Filter */}
@@ -685,12 +686,12 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className={`text-[11px] font-mono px-2 py-0.5 border ${
-                            c.testType === 'green'
-                              ? 'border-emerald-600/30 text-emerald-800 bg-emerald-50/40'
-                              : 'border-[#c81e16]/30 text-[#c81e16] bg-rose-50/40'
+                             c.testType === 'green'
+                               ? 'border-emerald-600/30 text-emerald-800 bg-emerald-50/40'
+                               : c.testType === 'red' ? 'border-[#c81e16]/30 text-[#c81e16] bg-rose-50/40' : 'border-slate-300 text-slate-700 bg-slate-50'
                           }`}
                         >
-                          {c.testType.toUpperCase()}
+                           {c.testType === 'general' ? 'MINI-TEST' : c.testType.toUpperCase()}
                         </span>
                         <span
                           className={`text-[10px] font-mono px-1.5 py-0.5 border ${

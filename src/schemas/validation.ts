@@ -73,7 +73,7 @@ export const candidateRegisterSchema = z.object({
     .trim()
     .min(2, 'Occupation is required')
     .max(100, 'Occupation cannot exceed 100 characters'),
-  testType: z.enum(['GREEN_TEST', 'RED_TEST', 'green', 'red']),
+  testType: z.enum(['GREEN_TEST', 'RED_TEST', 'GENERAL_TEST', 'green', 'red', 'general']).default('general'),
   testLevel: z
     .enum(['easy', 'hard', 'dễ', 'khó', 'EASY', 'HARD'])
     .optional()
@@ -134,7 +134,7 @@ export function createCandidateRegistrationSchema(lang: 'vi' | 'en') {
       .trim()
       .min(2, isVi ? 'Vui lòng nhập Nghề nghiệp hoặc Lĩnh vực của bạn' : 'Occupation is required')
       .max(100, isVi ? 'Nghề nghiệp không vượt quá 100 ký tự' : 'Occupation cannot exceed 100 characters'),
-    testType: z.enum(['GREEN_TEST', 'RED_TEST', 'green', 'red']),
+    testType: z.enum(['GREEN_TEST', 'RED_TEST', 'GENERAL_TEST', 'green', 'red', 'general']).default('general'),
     testLevel: z
       .enum(['easy', 'hard', 'dễ', 'khó', 'EASY', 'HARD'])
       .optional()
@@ -146,8 +146,8 @@ export function createCandidateRegistrationSchema(lang: 'vi' | 'en') {
     preferredTimeSlot: z
       .string()
       .trim()
-      .min(3, isVi ? 'Vui lòng chọn khung giờ thuận tiện' : 'Preferred time slot is required')
-      .max(250, isVi ? 'Ghi chú khung giờ quá dài' : 'Time slot note too long'),
+      .min(3, isVi ? 'Vui lòng ghi chú thời gian hoặc để hệ thống liên hệ sắp xếp' : 'Please add a time note or let us contact you to arrange it')
+      .max(250, isVi ? 'Ghi chú thời gian quá dài' : 'Time preference note too long'),
     selectedDate: z.string().trim().max(40).optional(),
     selectedTimeSlot: z.string().trim().max(80).optional(),
   });
@@ -158,13 +158,13 @@ export const notificationSettingsSchema = z.object({
   enabled: z.boolean().default(true),
 });
 
-export type CandidateRegisterInput = z.infer<typeof candidateRegisterSchema>;
+export type CandidateRegisterInput = z.input<typeof candidateRegisterSchema>;
 
 // Group C: Admin Protected Schemas
 export const adminCandidatesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  testType: z.enum(['ALL', 'GREEN', 'RED', 'green', 'red']).default('ALL'),
+  testType: z.enum(['ALL', 'GREEN', 'RED', 'GENERAL', 'green', 'red', 'general']).default('ALL'),
   status: z
     .enum(['ALL', 'NEW', 'CONTACTED', 'SCHEDULED', 'COMPLETED', 'NO_SHOW', 'new', 'contacted', 'scheduled', 'completed', 'noshow'])
     .default('ALL'),

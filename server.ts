@@ -224,7 +224,9 @@ async function startServer() {
       email: data.email.trim().toLowerCase(),
       ageRange: data.ageRange,
       occupation: data.occupation.trim(),
-      testType: data.testType === 'GREEN_TEST' || data.testType === 'green' ? 'green' : 'red',
+      testType: data.testType === 'GENERAL_TEST' || data.testType === 'general'
+        ? 'general'
+        : data.testType === 'GREEN_TEST' || data.testType === 'green' ? 'green' : 'red',
       testLevel: data.testLevel,
       preferredSlots: data.preferredTimeSlot.trim(),
       ...(data.selectedDate !== undefined ? { selectedDate: data.selectedDate } : {}),
@@ -283,7 +285,7 @@ async function startServer() {
     try {
       return res.json(await dbService.getCandidates({
         page, limit, search: search.trim() || undefined,
-        testType: testType !== 'ALL' ? (testType.toLowerCase().includes('green') ? 'green' : 'red') : undefined,
+        testType: testType !== 'ALL' ? testType.toLowerCase() : undefined,
         status: status !== 'ALL' ? status : undefined,
       }));
     } catch { return res.status(503).json({ error: 'Campaign database unavailable' }); }

@@ -102,7 +102,7 @@ class DatabaseService {
       const total = state.get('totalRegistered');
       if (!Number.isInteger(total) || total < 0 || total > 100 ||
         !Number.isInteger(state.get('greenCount')) || !Number.isInteger(state.get('redCount')) ||
-        state.get('greenCount') + state.get('redCount') !== total) throw new RegistrationError('MIGRATION_REQUIRED');
+        state.get('greenCount') + state.get('redCount') > total) throw new RegistrationError('MIGRATION_REQUIRED');
       if (total >= 100) throw new RegistrationError('CAPACITY_FULL');
       const lastRegistrationAt = lock.get('lastRegistrationAt');
       if (lock.exists && (!Number.isInteger(lastRegistrationAt) || lastRegistrationAt > now.getTime() ||

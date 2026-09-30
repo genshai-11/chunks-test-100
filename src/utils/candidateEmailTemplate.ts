@@ -8,7 +8,7 @@ export interface CandidateEmailData {
   fullName: string;
   phone: string;
   email: string;
-  testType: 'green' | 'red';
+  testType: 'green' | 'red' | 'general';
   testLevel?: 'easy' | 'hard';
   preferredSlots: string;
   chunkerCode?: string;
@@ -25,8 +25,9 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
   const isGreen = data.testType === 'green';
   const isHard = data.testLevel === 'hard';
 
-  const testTypeName = isGreen ? 'Green Focus Test (%c)' : 'Red Improvisation Test (%r)';
-  const testTypeDesc = isGreen
+  const testTypeName = data.testType === 'general' ? 'Mini-Test 21 câu (chưa phân nhánh)' : isGreen ? 'Green Focus Test (%c)' : 'Red Improvisation Test (%r)';
+  const testTypeDesc = data.testType === 'general'
+    ? 'Buổi đánh giá trực tiếp 1-on-1 cùng Chunker-in-Charge (CiC), quan sát phản xạ ngôn ngữ qua 21 câu ngắn trong 15–20 phút. Bạn không cần chọn nhánh test trước.' : isGreen
     ? 'Đánh giá năng lực tập trung nhận thức, chuẩn hóa trường âm và phản xạ âm thanh MSE (Motion - Sound - Emotion), nhận diện và triệt tiêu lỗi phát âm thói quen.'
     : 'Đánh giá năng lực ứng biến thời gian thực dưới ma sát nhận thức cao độ, phản xạ linh hoạt không kịch bản chuẩn bị trước, thích ứng với tình huống bất ngờ.';
 
@@ -35,9 +36,9 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
     ? 'Level Khó: Tốc độ phản xạ dồn dập, bẻ lái logic bất ngờ từ Chunker-in-Charge (CiC). Không cho phép dựa vào tài liệu chuẩn bị sẵn nhằm kiểm tra giới hạn phản xạ thực tế.'
     : 'Level Dễ: Nhịp độ tiêu chuẩn, làm quen phương pháp MSE, đánh giá phản xạ ngôn ngữ ở vạch xuất phát nhận thức trước khi nâng cấp.';
 
-  const testBadgeBg = isGreen ? '#ecfdf5' : '#fff1f2';
-  const testBadgeColor = isGreen ? '#047857' : '#be123c';
-  const testBadgeBorder = isGreen ? '#a7f3d0' : '#fecdd3';
+  const testBadgeBg = data.testType === 'general' ? '#f4f4f5' : isGreen ? '#ecfdf5' : '#fff1f2';
+  const testBadgeColor = data.testType === 'general' ? '#27272a' : isGreen ? '#047857' : '#be123c';
+  const testBadgeBorder = data.testType === 'general' ? '#d4d4d8' : isGreen ? '#a7f3d0' : '#fecdd3';
 
   const levelBadgeBg = isHard ? '#fff1f2' : '#eff6ff';
   const levelBadgeColor = isHard ? '#be123c' : '#1d4ed8';
@@ -85,7 +86,7 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
       <!-- Test Type Row -->
       <div style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed #e4e4e7;">
         <div style="font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
-          Bài test đã chọn (Assessment Type):
+           Bài đánh giá (Assessment):
         </div>
         <div style="display: inline-block; padding: 4px 10px; background: ${testBadgeBg}; border: 1px solid ${testBadgeBorder}; color: ${testBadgeColor}; font-weight: 700; font-size: 13px; margin-bottom: 6px;">
           ${testTypeName}
@@ -111,7 +112,7 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
       <!-- Preferred Slot & Contact -->
       <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13px;">
         <div>
-          <span style="color: #71717a;">Khung giờ ưu tiên:</span>
+           <span style="color: #71717a;">Ghi chú thời gian dự kiến:</span>
           <strong style="color: #0a0a0a; margin-left: 6px;">${escapeHtml(data.preferredSlots)}</strong>
         </div>
         <div>
@@ -184,11 +185,11 @@ CHI TIẾT ĐĂNG KÝ:
 - Họ và tên: ${data.fullName}
 - Số điện thoại: ${data.phone}
 - Email: ${data.email}
-- Bài test đã chọn: ${testTypeName}
+ - Bài đánh giá: ${testTypeName}
   (${testTypeDesc})
 - Level muốn test: ${testLevelName}
   (${testLevelDesc})
-- Khung giờ ưu tiên: ${data.preferredSlots}
+ - Ghi chú thời gian dự kiến: ${data.preferredSlots}
 - Mã giới thiệu: ${data.chunkerCode || 'PILOT100'}
 
 HƯỚNG DẪN CHUẨN BỊ:

@@ -55,8 +55,8 @@ export const ChunksCtaBand: React.FC<Props> = ({
 
           <p className="text-[14.5px] md:text-[15.5px] text-white/75 font-light leading-relaxed max-w-[54ch]">
             {lang === 'vi'
-              ? 'Theo CHUNKS Theory MN107.v2.1: Phản xạ ngôn ngữ có ý thức không nằm trên trang giấy học vẹt câu mẫu, mà là sự hợp nhất tức thời giữa Chuyển động (Motion) – Âm thanh (Sound) – Cảm xúc (Emotion). Trải nghiệm bài Mini-Test 21 câu ngắn (15 - 20 phút) trực tiếp 1-on-1 cùng Chunker-in-Charge để xác định vạch xuất phát phản xạ thực tế của bạn.'
-              : 'According to CHUNKS Theory MN107.v2.1: Authentic speech reflex is not textbook memorization, but real-time coordination across Motion, Sound, and Emotion (MSE). Experience the 21-question Mini-Test (15–20 minutes) 1-on-1 in-person with a Chunker-in-Charge to map your authentic speech reflex baseline.'}
+               ? 'Dựa trên CHUNKS Theory MN107.v2.1, CiC quan sát cách Chuyển động, Âm thanh và Cảm xúc (MSE) phối hợp khi bạn đối thoại. Mini-Test 21 câu trong 15–20 phút là cơ hội ghi nhận phản xạ hiện tại; không cần học thuộc mẫu câu trước buổi gặp.'
+               : 'Based on CHUNKS Theory MN107.v2.1, the CiC observes how Motion, Sound and Emotion (MSE) work together as you speak. The 21-question, 15–20 minute Mini-Test records your responses in the moment; no memorized script needed.'}
           </p>
 
           {/* Reference Links to official CHUNKS portals */}
@@ -112,7 +112,7 @@ export const ChunksCtaBand: React.FC<Props> = ({
               onClick={onSelectGreen}
               className="w-full bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[14px] font-bold rounded-full px-6 py-3.5 flex items-center justify-between transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-lg"
             >
-              <span>{lang === 'vi' ? 'Đăng ký Mini-Test 20p' : 'Book 20m Mini-Test'}</span>
+               <span>{lang === 'vi' ? 'Gửi yêu cầu tham gia' : 'Request your Mini-Test'}</span>
               <ArrowUpRight className="w-4 h-4 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </motion.button>
           </div>

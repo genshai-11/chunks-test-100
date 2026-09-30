@@ -1,25 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Brain,
-  Compass,
-  CheckCircle2,
-  Clock,
   ChevronRight,
   AlertCircle,
-  HelpCircle,
-  ShieldCheck,
-  UserCheck,
   QrCode,
   ExternalLink,
-  Sparkles,
+  ArrowUpRight,
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { TestType, AgeRange, AssessmentInfo } from '../types';
-import { TIME_SLOT_OPTIONS, GREEN_TEST_INFO, RED_TEST_INFO } from '../constants/initialData';
+import { motion, useReducedMotion } from 'motion/react';
+import { AgeRange } from '../types';
 import { apiValidateReferral, apiRegisterCandidate } from '../api/client';
 import { createCandidateRegistrationSchema } from '../schemas/validation';
-import { BookingCalendar, SlotSelection } from '../components/BookingCalendar';
-import { AssessmentDetailModal } from '../components/AssessmentDetailModal';
 import { BookingSuccessModal } from '../components/BookingSuccessModal';
 import { ChunksFeatureBand } from '../components/ChunksFeatureBand';
 import { ChunksNumberedFaq } from '../components/ChunksNumberedFaq';
@@ -44,11 +34,9 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
   const [email, setEmail] = useState('');
   const [ageRange, setAgeRange] = useState<AgeRange>('25-34');
   const [occupation, setOccupation] = useState('');
-  const [testType, setTestType] = useState<TestType>('green');
-  const [testLevel, setTestLevel] = useState<'easy' | 'hard'>('easy');
-  const [selectedSlot, setSelectedSlot] = useState<string>(TIME_SLOT_OPTIONS[0].labelEn);
-  const [calendarSlot, setCalendarSlot] = useState<SlotSelection | null>(null);
+  const [testLevel, setTestLevel] = useState<'easy' | 'hard' | null>(null);
   const [customSlotNote, setCustomSlotNote] = useState('');
+  const reduceMotion = useReducedMotion();
 
   // Honeypot anti-bot
   const [honeypot, setHoneypot] = useState('');
@@ -57,9 +45,6 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [selectedAssessmentModal, setSelectedAssessmentModal] = useState<AssessmentInfo | null>(
-    null
-  );
   const [confirmedCandidate, setConfirmedCandidate] = useState<any | null>(null);
 
   const clearFieldError = (field: string) => {
@@ -76,11 +61,6 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
   useEffect(() => {
     setReferralCode(initialReferralCode || '');
   }, [initialReferralCode]);
-
-  // Sync initial slot based on lang
-  useEffect(() => {
-    setSelectedSlot(lang === 'vi' ? TIME_SLOT_OPTIONS[0].labelVi : TIME_SLOT_OPTIONS[0].labelEn);
-  }, [lang]);
 
   // Resolve referral code via Group A Public API (Only if explicitly present)
   useEffect(() => {
@@ -123,13 +103,13 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       return;
     }
 
-    const preferredTimeSlotStr = calendarSlot
-      ? (customSlotNote.trim()
-          ? `${calendarSlot.fullSlotString} — ${lang === 'vi' ? 'Ghi chú' : 'Note'}: ${customSlotNote.trim()}`
-          : calendarSlot.fullSlotString)
-      : (customSlotNote.trim()
-          ? `${selectedSlot} (${customSlotNote.trim()})`
-          : selectedSlot);
+    if (!testLevel) {
+      setFieldErrors({ testLevel: lang === 'vi' ? 'Vui lòng chọn Dễ hoặc Khó' : 'Please choose Easy or Hard' });
+      document.getElementById('test-level')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+      return;
+    }
+
+    const preferredTimeSlotStr = customSlotNote.trim() || (lang === 'vi' ? 'Chưa ghi chú thời gian; liên hệ để sắp xếp' : 'No time preference; contact to arrange');
 
     const safeRefCode = isCodeValid && referralCode.trim() ? referralCode.trim().toUpperCase() : 'PILOT100';
 
@@ -140,11 +120,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       email: email.trim(),
       ageRange,
       occupation: occupation.trim(),
-      testType: testType === 'green' ? ('GREEN_TEST' as const) : ('RED_TEST' as const),
       testLevel: testLevel,
       preferredTimeSlot: preferredTimeSlotStr,
-      selectedDate: calendarSlot?.dateStr,
-      selectedTimeSlot: calendarSlot?.timeStr,
     };
 
     // ZOD VALIDATION: Phone format & Email pattern verification
@@ -190,7 +167,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
         setConfirmedCandidate({
           id: response.registrationId,
           fullName: fullName.trim(),
-          testType,
+          testType: 'general',
           testLevel,
           preferredSlots: preferredTimeSlotStr,
           chunkerName: inviterName || (safeRefCode === 'PILOT100' ? '' : safeRefCode),
@@ -203,6 +180,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
         setEmail('');
         setOccupation('');
         setCustomSlotNote('');
+        setTestLevel(null);
         setFormError(null);
         setFieldErrors({});
       } else {
@@ -232,119 +210,45 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
   return (
     <div className="w-full text-[#0a0a0a]">
-      {/* 1. Hero Masthead: 12-Column Swiss Grid */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full hairline-b bg-gradient-to-b from-white via-white to-slate-50/40"
-      >
-        <div className="max-w-[1180px] mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-12 gap-x-6 pt-16 md:pt-24 pb-14 md:pb-16">
-          {/* Left Column (col-span-3): Micro Eyebrow with Animated Pulse Dot */}
-          <div className="col-span-12 md:col-span-3 mb-6 md:mb-0">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/90 border border-[rgba(10,10,10,0.1)]">
-              <span className="w-2 h-2 rounded-full bg-[#c81e16] animate-pulse shrink-0" />
-              <span className="text-[10px] sm:text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#0a0a0a]/80 font-mono">
-                CHUNKS PILOT · MN107.V2.1 / CONSCIOUS SPEECH REFLEX
-              </span>
+      {/* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · editorial CHUNKS hero */}
+      <section className="relative w-full overflow-hidden hairline-b bg-[#f7f5f1]">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.035] hero-grid" aria-hidden="true" />
+        <div className="relative max-w-[1180px] mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-12 gap-x-6 pt-16 md:pt-24 pb-14 md:pb-16">
+          <motion.div initial={reduceMotion ? false : { opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }} className="md:col-span-3 mb-9 md:mb-0 flex flex-col justify-between gap-8">
+            <div className="flex items-center gap-3 text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70">
+              <span className="h-2.5 w-2.5 bg-[#c81e16]" aria-hidden="true" /> CHUNKS / 100
             </div>
-          </div>
-
-          {/* Right Column (col-span-9): Headline, Lead & Tabular Meta */}
-          <div className="col-span-12 md:col-span-9">
-            <motion.h1
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.1, ease: 'easeOut' }}
-              className="text-[clamp(2.4rem,6vw,5rem)] leading-[0.94] tracking-[-0.03em] font-semibold text-[#0a0a0a] text-balance"
-            >
-              {lang === 'vi' ? (
-                <>
-                  Năng lực phản xạ<span className="text-[#ff3b30]">,</span> thử thách có ý thức
-                  <span className="text-[#ff3b30]">.</span>
-                </>
-              ) : (
-                <>
-                  Conscious speech reflex<span className="text-[#ff3b30]">,</span> tested
-                  <span className="text-[#ff3b30]">.</span>
-                </>
-              )}
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.2, ease: 'easeOut' }}
-              className="max-w-[48ch] text-[16px] md:text-[17px] text-[#0a0a0a]/65 leading-relaxed mt-6 font-normal tracking-[-0.011em]"
-            >
-              {lang === 'vi'
-                ? 'Khám phá cách bạn duy trì sự chú ý hoặc ứng biến khi nói dưới áp lực qua Chuyển động, Âm thanh và Cảm xúc (MSE). Buổi đánh giá trực tiếp 1-on-1, 15 - 20 phút cùng Chunker-in-Charge. Chương trình thử nghiệm hướng tới 100 lượt đăng ký đủ điều kiện.'
-                : 'Explore how you sustain attention or improvise while speaking under pressure through Motion, Sound and Emotion (MSE). A live, 15-20 minute 1-on-1 assessment with a Chunker-in-Charge. This pilot aims for 100 qualified registrations.'}
-            </motion.p>
-
-            {/* Campaign Call-to-Actions in Hero with Framer Motion hover/tap */}
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.3, ease: 'easeOut' }}
-              className="flex flex-wrap items-center gap-3.5 mt-8"
-            >
-              <motion.button
-                whileHover={{ scale: 1.025 }}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={scrollToForm}
-                className="bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[14px] font-bold rounded-full px-7 py-3 transition-colors cursor-pointer shadow-sm flex items-center gap-2"
-              >
-                <span>{lang === 'vi' ? 'Đăng ký đánh giá 1-on-1' : 'Register for 1-on-1'}</span>
-                <ChevronRight className="w-4 h-4 text-white" />
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={() => onOpenChunkerHub && onOpenChunkerHub(referralCode)}
-                className="text-[13px] font-semibold text-[#0a0a0a]/80 hover:text-[#0a0a0a] border border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a] hover:bg-slate-50 rounded-full px-5 py-3 flex items-center gap-2 transition-all cursor-pointer"
-              >
-                <QrCode className="w-3.5 h-3.5 text-[#c81e16]" />
-                <span>
-                  {lang === 'vi'
-                    ? 'Dành cho Chunkee: Tự tạo link & mã QR'
-                    : 'For Chunkees: Generate Your Link & QR'}
-                </span>
-              </motion.button>
+            <span className="hidden md:block text-[11px] font-mono uppercase tracking-[0.18em] text-[#0a0a0a]/50">MN107.v2.1<br />01 — 21</span>
+          </motion.div>
+          <div className="md:col-span-9 min-w-0">
+            <div className="overflow-hidden">
+              <motion.h1 initial={reduceMotion ? false : { y: '105%' }} animate={{ y: 0 }} transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }} className="max-w-[16ch] min-w-0 text-[clamp(2.7rem,7.4vw,6.8rem)] leading-[0.99] tracking-[-0.055em] font-semibold [overflow-wrap:anywhere]">
+                {lang === 'vi' ? <>Khi nói thật,<br /><span className="text-[#c81e16]">bạn phản xạ ra sao?</span></> : <>How do you respond <span className="text-[#c81e16]">when you speak?</span></>}
+              </motion.h1>
+            </div>
+            <motion.div initial={reduceMotion ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.32 }} className="mt-8 grid grid-cols-1 lg:grid-cols-9 gap-8 lg:gap-12 items-end">
+              <p className="lg:col-span-6 max-w-[53ch] text-[16px] md:text-[18px] leading-[1.65] text-[#0a0a0a]/75">
+                {lang === 'vi' ? 'Một cuộc gặp trực tiếp để quan sát cách bạn duy trì sự chú ý, ứng biến và kết nối ý tưởng khi nói tiếng Anh. Mini-Test 21 câu, 15–20 phút, 1-on-1 cùng Chunker-in-Charge (CiC); không phải bài trắc nghiệm ngữ pháp.' : 'A live conversation to observe how you sustain attention, improvise and connect ideas in spoken English. A 21-question Mini-Test, 15–20 minutes, in person with a Chunker-in-Charge (CiC); not a grammar quiz.'}
+              </p>
+              <div className="lg:col-span-3 flex flex-col gap-3">
+                <motion.button whileHover={reduceMotion ? undefined : { y: -3 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }} type="button" onClick={scrollToForm} className="w-full bg-[#c81e16] hover:bg-[#a81711] text-white font-semibold text-[14px] px-6 py-4 flex justify-between items-center cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81e16] transition-colors">
+                  {lang === 'vi' ? 'Đăng ký Mini-Test' : 'Register for the Mini-Test'} <ArrowUpRight className="w-5 h-5 shrink-0" />
+                </motion.button>
+                <button type="button" onClick={() => onOpenChunkerHub?.(referralCode)} className="text-[12px] font-medium text-[#0a0a0a]/70 hover:text-[#c81e16] flex items-center gap-2 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[#c81e16]">
+                  <QrCode className="w-4 h-4 shrink-0" />{lang === 'vi' ? 'Chunkee? Link & QR' : 'Chunkee? Link & QR'}
+                </button>
+              </div>
             </motion.div>
-
-            {/* Tabular-nums Meta Row */}
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.4, ease: 'easeOut' }}
-              className="flex flex-wrap items-center gap-6 mt-8 pt-8 border-t border-[rgba(10,10,10,0.14)] text-[12.5px] font-medium text-[#0a0a0a]/60 tabular-nums"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[16px] text-[#0a0a0a] font-mono">100</span>
-                <span>{lang === 'vi' ? 'Mục Tiêu Đăng Ký' : 'Registration Target'}</span>
-              </div>
-
-              <span className="w-px h-3.5 bg-[rgba(10,10,10,0.15)] hidden sm:block" aria-hidden="true" />
-
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[16px] text-[#0a0a0a] font-mono">15 – 20m</span>
-                <span>{lang === 'vi' ? 'Mini-Test 21 Câu' : '21-Question Mini-Test'}</span>
-              </div>
-
-              <span className="w-px h-3.5 bg-[rgba(10,10,10,0.15)] hidden sm:block" aria-hidden="true" />
-
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[16px] text-[#c81e16] font-mono">Offline</span>
-                <span>{lang === 'vi' ? 'Đánh Giá Trực Tiếp' : 'In-Person 1-on-1'}</span>
-              </div>
+            <motion.div initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.5 }} className="mt-12 border-t border-[#0a0a0a]/20 grid grid-cols-2 sm:grid-cols-3 gap-5 pt-6">
+              {[
+                ['21', lang === 'vi' ? 'câu ngắn' : 'short questions'],
+                ['15–20', lang === 'vi' ? 'phút trực tiếp' : 'minutes in person'],
+                ['100', lang === 'vi' ? 'lượt đăng ký đủ điều kiện tối đa' : 'qualified registrations maximum'],
+              ].map(([number, label]) => <div key={number} className="flex flex-col gap-1"><strong className="text-[24px] font-mono font-semibold tracking-tight">{number}</strong><span className="text-[12px] text-[#0a0a0a]/65">{label}</span></div>)}
             </motion.div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* 2. Inverted Feature Specimen Rule */}
       <ChunksFeatureBand />
@@ -352,15 +256,15 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       {/* 3. Form-First Candidate Registration Section */}
       <section id="booking-form" className="scroll-mt-24 max-w-[1180px] mx-auto px-6 md:px-10 py-16 md:py-24">
         {/* Introductory Banner: About CHUNKS & Mini-Test format */}
-        <div className="mb-8 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50/70 rounded-none space-y-3">
+        <motion.div initial={reduceMotion ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="mb-8 p-6 sm:p-8 border-l-4 border-[#c81e16] bg-[#f7f5f1] space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <img src="/logo.png" alt="CHUNKS" className="w-5 h-5 object-contain" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
-                CHUNKS TEST 100 · KHẢO SÁT PHẢN XẠ NGÔN NGỮ (MSE)
+                {lang === 'vi' ? 'CHUNKS TEST 100 · BUỔI KHẢO SÁT TRỰC TIẾP' : 'CHUNKS TEST 100 · IN-PERSON ASSESSMENT'}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs font-mono">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
               <a
                 href="https://the-chunks.com/"
                 target="_blank"
@@ -370,8 +274,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 <span>the-chunks.com</span>
                 <ExternalLink className="w-3 h-3 text-[#c81e16]" />
               </a>
-              <a
-                href="https://chunkstheory.com/"
+                   <a
+                     href="https://chunkstheory.com/chunks-theory-2026-7-pages/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-[rgba(10,10,10,0.15)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors"
@@ -381,12 +285,13 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </a>
             </div>
           </div>
-          <p className="text-[13.5px] text-[#0a0a0a]/75 font-light leading-relaxed max-w-3xl">
-            {lang === 'vi'
-              ? 'Bài Mini-Test 21 câu (15 – 20 phút) diễn ra trực tiếp (Offline 1-on-1) cùng chuyên viên CiC nhằm khảo sát năng lực phối hợp có ý thức giữa Thân – Khẩu – Ý qua phương pháp MSE trong thời gian thực. Không chấm điểm lý thuyết, đo lường phản xạ tự nhiên của bạn.'
-              : 'The 21-question Mini-Test (15–20 minutes) is conducted 1-on-1 in-person with a CiC to map your real speech reflex across Motion, Sound, and Emotion (MSE). Zero textbook grammar scoring; measuring authentic spontaneous reflex.'}
-          </p>
-        </div>
+           <h2 className="text-[22px] sm:text-[28px] font-semibold tracking-tight max-w-[30ch] leading-tight">{lang === 'vi' ? 'Không cần học trước. Hãy đến và nói như bạn thường nói.' : 'No preparation needed. Speak the way you normally do.'}</h2>
+           <p className="text-[14px] text-[#0a0a0a]/75 leading-relaxed max-w-3xl">
+             {lang === 'vi'
+               ? 'Trong 21 câu ngắn, CiC quan sát cách Chuyển động, Âm thanh và Cảm xúc (MSE) phối hợp khi bạn nói. Bạn chỉ chọn mức độ mong muốn; đội ngũ CHUNKS sẽ liên hệ qua điện thoại/Zalo để thống nhất lịch và địa điểm sau khi nhận đăng ký.'
+               : 'Across 21 short questions, a CiC observes how Motion, Sound and Emotion (MSE) come together as you speak. Choose your preferred difficulty; CHUNKS will contact you by phone/Zalo to agree on the time and venue after registration.'}
+           </p>
+        </motion.div>
         {Boolean(referralCode.trim() && isCodeValid && inviterName) && (
           <div className="mb-10 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -437,29 +342,32 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
           </div>
         )}
         {!isCodeValid && (
-          <div className="mb-6 p-4 border border-[rgba(10,10,10,0.14)] bg-slate-50">
+          <motion.div initial={reduceMotion ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-8 p-5 sm:p-6 border border-[#c81e16]/30 bg-[#fff5f2] relative overflow-hidden">
+            <span className="absolute left-0 top-0 bottom-0 w-1 bg-[#c81e16]" aria-hidden="true" />
+            <span className="block text-[10px] font-mono uppercase tracking-[0.2em] font-bold text-[#a81711] mb-2">{lang === 'vi' ? 'LỜI MỜI / 01' : 'INVITATION / 01'}</span>
             <label htmlFor="referral-code" className="block text-sm font-medium">
-              {lang === 'vi' ? 'Mã giới thiệu (không bắt buộc)' : 'Referral code (optional)'}
+              {lang === 'vi' ? 'Bạn có mã giới thiệu từ Chunkee?' : 'Have a referral code from a Chunkee?'}
             </label>
             <input
               id="referral-code"
               value={referralCode}
               onChange={(event) => setReferralCode(event.target.value)}
               maxLength={30}
-              className="mt-2 border border-slate-300 p-2"
+              placeholder={lang === 'vi' ? 'Nhập mã nếu có' : 'Enter your code if you have one'}
+              className="mt-3 w-full sm:max-w-xs bg-white border border-[#0a0a0a]/25 px-4 py-3 focus:outline-2 focus:outline-[#c81e16]"
             />
             <p className="mt-2 text-xs text-slate-600">
               {loadingCode
                 ? (lang === 'vi' ? 'Đang kiểm tra mã…' : 'Checking code…')
                 : (lang === 'vi'
-                    ? 'Không có mã hợp lệ? Đăng ký qua danh sách chờ PILOT100.'
-                    : 'No valid code? Register through the PILOT100 waitlist.')}
+                     ? 'Chưa có mã? Bạn vẫn có thể gửi yêu cầu qua chương trình PILOT100.'
+                     : 'No code yet? You can still submit a request through PILOT100.')}
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* 12-Column Layout for Form */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-10 gap-y-12">
+        <motion.div initial={reduceMotion ? false : { opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.05 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="grid grid-cols-1 md:grid-cols-12 gap-x-10 gap-y-12">
           {/* Left Column (col-span-4): Explanatory Sidebar */}
           <div className="col-span-12 md:col-span-4 space-y-6">
             <div>
@@ -471,8 +379,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </h2>
               <p className="text-[14.5px] text-[#0a0a0a]/65 font-light leading-relaxed mt-3">
                 {lang === 'vi'
-                  ? 'Đăng ký tham gia bài Mini-Test 21 câu ngắn (15 - 20 phút) trực tiếp 1-on-1 cùng chuyên viên CiC để khảo sát phản xạ ngôn ngữ thực tế qua phương pháp MSE.'
-                  : 'Register for the 21-question Mini-Test (15-20 minutes) conducted 1-on-1 in-person with a CiC to assess real speech reflexes via MSE.'}
+                   ? 'Để lại thông tin và chọn mức độ bạn muốn thử. CiC sẽ quan sát cách bạn phản hồi trong bài Mini-Test 21 câu, 15–20 phút trực tiếp. Đội ngũ CHUNKS sẽ liên hệ xác nhận lịch.'
+                   : 'Share your details and preferred difficulty. A CiC will observe your responses during the 21-question, 15–20 minute in-person Mini-Test. CHUNKS will contact you to confirm the appointment.'}
               </p>
             </div>
 
@@ -499,8 +407,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 </span>
                 <span className="text-[#0a0a0a]/70 font-light">
                   {lang === 'vi'
-                    ? 'Thông tin cá nhân được bảo vệ trên hệ thống máy chủ, chỉ phục vụ duy nhất cho buổi đánh giá của bạn.'
-                    : 'Personal details are stored securely on the backend, strictly used for your session coordination.'}
+                     ? 'Thông tin liên hệ được lưu trên máy chủ để đội ngũ được phân quyền điều phối buổi đánh giá và gửi xác nhận.'
+                     : 'Contact details are stored on the server for authorized staff to coordinate and confirm your session.'}
                 </span>
               </div>
             </div>
@@ -539,7 +447,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                   01. {lang === 'vi' ? 'THÔNG TIN LIÊN LẠC' : 'CONTACT CREDENTIALS'}
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
                       htmlFor="field-fullName"
@@ -641,8 +549,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                     ) : (
                       <span className="text-[11px] text-[#0a0a0a]/45 mt-1 block font-mono">
                         {lang === 'vi'
-                          ? 'Nhận thư mời Google Meet & kết quả'
-                          : 'For Google Meet invite & score results'}
+                         ? 'Nhận xác nhận đăng ký và thông tin liên hệ'
+                         : 'For registration confirmation and follow-up'}
                       </span>
                     )}
                   </div>
@@ -702,128 +610,24 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 </div>
               </div>
 
-              {/* 2. Test Selection (Green vs Red Radio Cards) */}
-              <div id="test-options" className="space-y-4 scroll-mt-24">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  02. {lang === 'vi' ? 'ĐỊNH HƯỚNG PHẢN XẠ MONG MUỐN' : 'SELECT REFLEX FOCUS'}
-                </span>
-                <p className="text-[13px] text-[#0a0a0a]/70 font-light -mt-2">
-                  {lang === 'vi'
-                    ? 'Mặc định bài test là Mini-Test 21 câu ngắn toàn diện (15 - 20 phút). Bạn có thể chọn trọng tâm muốn chuyên viên CiC lưu ý hơn:'
-                    : 'The standard assessment is a 21-question mini-test (15-20 min). Select the primary reflex stream for the CiC to observe:'}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Card 1: Green Test */}
-                  <div
-                    onClick={() => setTestType('green')}
-                    className={`p-5 border cursor-pointer transition-all ${
-                      testType === 'green'
-                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a]'
-                        : 'border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
-                        <span className="text-[14px] font-bold text-[#0a0a0a]">
-                          {lang === 'vi' ? 'Tập trung phản xạ (%c Focus)' : 'Speech Reflex Focus (%c Focus)'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] uppercase font-mono tracking-wider text-[#0a0a0a]/60">
-                        Offline · 15-20m
-                      </span>
-                    </div>
-
-                    <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
-                      {lang === 'vi'
-                        ? 'Giữ vững câu từ, duy trì nhịp nói và bình tĩnh khi đối thoại trực tiếp.'
-                        : 'Maintain composed syntax, steady vocal rhythm, and calm focus in direct 1-on-1 dialogue.'}
-                    </p>
-
-                    <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedAssessmentModal(GREEN_TEST_INFO);
-                        }}
-                        className="text-[12px] text-[#c81e16] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>{lang === 'vi' ? '[Chi tiết Mini-Test Focus]' : '[Focus Mini-Test Details]'}</span>
-                      </button>
-                      <span className="text-[11px] font-mono tabular-nums text-[#0a0a0a]/50">
-                        15-20 min · 21 questions · Offline
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Red Test */}
-                  <div
-                    onClick={() => setTestType('red')}
-                    className={`p-5 border cursor-pointer transition-all ${
-                      testType === 'red'
-                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a]'
-                        : 'border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ff3b30] shrink-0" />
-                        <span className="text-[14px] font-bold text-[#0a0a0a]">
-                          {lang === 'vi' ? 'Ứng biến linh hoạt (%r Improv)' : 'Agile Improvisation (%r Improv)'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] uppercase font-mono tracking-wider text-[#0a0a0a]/60">
-                        Offline · 15-20m
-                      </span>
-                    </div>
-
-                    <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
-                      {lang === 'vi'
-                        ? 'Khả năng xoay chuyển ý tưởng mượt mà, phản xạ tức thì với tình huống bất ngờ.'
-                        : 'Seamless narrative agility and instantaneous reflex when navigating unexpected prompts.'}
-                    </p>
-
-                    <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedAssessmentModal(RED_TEST_INFO);
-                        }}
-                        className="text-[12px] text-[#c81e16] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>{lang === 'vi' ? '[Chi tiết Mini-Test Improv]' : '[Improv Mini-Test Details]'}</span>
-                      </button>
-                      <span className="text-[11px] font-mono tabular-nums text-[#0a0a0a]/50">
-                        15-20 min · 21 questions · Offline
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-[12px] text-[#0a0a0a]/60 italic mt-2">
-                  {lang === 'vi'
-                    ? '💡 Chuyên viên CiC sẽ linh hoạt điều chỉnh theo nhịp nói thực tế của bạn.'
-                    : '💡 Your Chunker-in-Charge (CiC) flexibly adapts the session to your authentic speech cadence.'}
-                </p>
-              </div>
-
-              {/* 2b. Test Level Selection (Dễ vs Khó) */}
-              <div id="test-level" className="space-y-4">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  02b. {lang === 'vi' ? 'LEVEL MUỐN TEST (ĐỘ KHÓ)' : 'SELECT TEST LEVEL (DIFFICULTY)'}
-                </span>
+               {/* 2. Only the requested difficulty is chosen; the assessment stream is not assigned here. */}
+               <fieldset id="test-level" className="space-y-4">
+                 <legend className="sr-only">{lang === 'vi' ? 'Mức độ mong muốn' : 'Preferred difficulty'}</legend>
+                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
+                   02. {lang === 'vi' ? 'MỨC ĐỘ BẠN MUỐN THỬ' : 'YOUR PREFERRED DIFFICULTY'}
+                 </span>
+                 <p className="text-[13px] text-[#0a0a0a]/70">{lang === 'vi' ? 'Chỉ cần chọn Dễ hoặc Khó. CiC sẽ quan sát phản xạ của bạn trong buổi Mini-Test; bạn không cần chọn loại bài test.' : 'Simply choose Easy or Hard. The CiC will observe your responses during the Mini-Test; there is no test type to select.'}</p>
+                 {fieldErrors.testLevel && <p className="text-[#c81e16] text-sm" role="alert">{fieldErrors.testLevel}</p>}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Option 1: Cơ bản (Dễ) */}
-                  <div
-                    onClick={() => setTestLevel('easy')}
-                    className={`p-5 border cursor-pointer transition-all ${
-                      testLevel === 'easy'
-                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a]'
-                        : 'border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a]'
-                    }`}
+                   <button type="button" aria-pressed={testLevel === 'easy'} disabled={submitting}
+                      onClick={() => { setTestLevel('easy'); clearFieldError('testLevel'); }}
+                     className={`p-5 text-left w-full border cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81e16] ${
+                       testLevel === 'easy'
+                         ? 'border-[#c81e16] bg-[#fff5f2] ring-1 ring-[#c81e16]'
+                         : 'border-[rgba(10,10,10,0.18)] hover:border-[#c81e16]'
+                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -839,24 +643,24 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
                     <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
                       {lang === 'vi'
-                        ? 'Nhịp độ tiêu chuẩn, làm quen khảo sát MSE và đo phản xạ tự nhiên.'
-                        : 'Standard pacing, introducing MSE reflection and measuring spontaneous natural reflex.'}
+                         ? 'Tôi muốn bắt đầu ở nhịp độ vừa phải, có thời gian làm quen với câu hỏi.'
+                         : 'I would like a measured pace and time to get comfortable with the questions.'}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between text-[11px] font-mono text-[#0a0a0a]/60">
-                      <span>{lang === 'vi' ? 'Áp lực: Tiêu chuẩn' : 'Pressure: Standard'}</span>
-                      <span className="text-blue-700 font-semibold">Standard Baseline</span>
-                    </div>
-                  </div>
+                       <span>{lang === 'vi' ? 'Nhịp độ mong muốn' : 'Preferred pace'}</span>
+                       <span className="text-blue-700 font-semibold">01 / 02</span>
+                     </div>
+                   </button>
 
                   {/* Option 2: Nâng cao (Khó) */}
-                  <div
-                    onClick={() => setTestLevel('hard')}
-                    className={`p-5 border cursor-pointer transition-all ${
-                      testLevel === 'hard'
-                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a]'
-                        : 'border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a]'
-                    }`}
+                   <button type="button" aria-pressed={testLevel === 'hard'} disabled={submitting}
+                      onClick={() => { setTestLevel('hard'); clearFieldError('testLevel'); }}
+                     className={`p-5 text-left w-full border cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81e16] ${
+                       testLevel === 'hard'
+                         ? 'border-[#c81e16] bg-[#fff5f2] ring-1 ring-[#c81e16]'
+                         : 'border-[rgba(10,10,10,0.18)] hover:border-[#c81e16]'
+                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -872,53 +676,42 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
                     <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
                       {lang === 'vi'
-                        ? 'Nhịp độ dồn dập, tăng ma sát hội thoại và thử thách phản xạ dưới áp lực cao.'
-                        : 'Fast-paced cadence, heightened dialogue friction and intense reflex challenge under pressure.'}
+                         ? 'Tôi muốn thử câu hỏi có nhịp nhanh hơn và gợi ý bất ngờ hơn.'
+                         : 'I would like a quicker pace with more unexpected prompts.'}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between text-[11px] font-mono text-[#0a0a0a]/60">
-                      <span>{lang === 'vi' ? 'Áp lực: Cao độ' : 'Pressure: High Friction'}</span>
-                      <span className="text-[#c81e16] font-semibold">High Pressure</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                       <span>{lang === 'vi' ? 'Nhịp độ mong muốn' : 'Preferred pace'}</span>
+                       <span className="text-[#c81e16] font-semibold">02 / 02</span>
+                     </div>
+                   </button>
+                 </div>
+               </fieldset>
 
-              {/* 3. Availability Calendar Picker */}
-              <div className="space-y-4">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  03. {lang === 'vi' ? 'CHỌN NGÀY & KHUNG GIỜ ĐÁNH GIÁ' : 'SELECT DATE & TIME WINDOW'}
-                </span>
-                <p className="text-[13px] text-[#0a0a0a]/75 font-normal -mt-2">
-                  {lang === 'vi'
-                    ? 'Thời lượng 15 - 20 phút với Chunker-in-Charge (CiC). Lịch đã chọn là thời gian mong muốn dự kiến và được đồng bộ trực tiếp lên hệ thống Firestore.'
-                    : 'Duration: 15 - 20 minutes with a Chunker-in-Charge (CiC). The selected schedule is your desired expected slot and is synced directly to Firestore.'}
-                </p>
-
-                {/* Interactive Monthly/Daily Calendar and Slot Picker */}
-                <BookingCalendar
-                  lang={lang}
-                  onSelectSlot={(slot) => {
-                    setCalendarSlot(slot);
-                    setSelectedSlot(slot.fullSlotString);
-                  }}
-                />
-
-                <div className="pt-1">
-                  <label className="block text-[11px] font-mono text-[#0a0a0a]/60 uppercase tracking-wider mb-1">
-                    {lang === 'vi' ? 'Ghi chú thêm về lịch hẹn (Tùy chọn)' : 'Additional Scheduling Notes (Optional)'}
-                  </label>
-                  <input
-                    type="text"
-                    value={customSlotNote}
-                    onChange={(e) => setCustomSlotNote(e.target.value)}
-                    placeholder={
-                      lang === 'vi'
-                        ? 'Ví dụ: Cần xếp lịch trên Google Meet hoặc dời sang 20:30 nếu được...'
-                        : 'e.g. Prefer Google Meet or adjust starting time if needed...'
-                    }
-                    className="w-full border border-[rgba(10,10,10,0.18)] px-3.5 py-2.5 text-[13.5px] text-[#0a0a0a] focus:outline-none focus:border-[#c81e16] bg-white font-light"
-                  />
+               {/* 3. Free-form time preference; operations confirms the appointment. */}
+               <div className="space-y-4">
+                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
+                   03. {lang === 'vi' ? 'GHI CHÚ THỜI GIAN (TÙY CHỌN)' : 'TIME PREFERENCE (OPTIONAL)'}
+                 </span>
+                 <p className="text-[13px] text-[#0a0a0a]/75 font-normal -mt-2">
+                   {lang === 'vi'
+                     ? 'Bạn có thể ghi khi nào thuận tiện hoặc mong muốn thử bài test. Đây chỉ là gợi ý; điều phối viên sẽ gọi/Zalo để xác nhận lịch trực tiếp tại cơ sở CHUNKS.'
+                     : 'Tell us when you are available or what you hope to try. This is only a preference; operations will call/message you to confirm the in-person appointment at CHUNKS.'}
+                 </p>
+                 <div className="pt-1">
+                   <label htmlFor="time-preference" className="block text-[11px] font-mono text-[#0a0a0a]/60 uppercase tracking-wider mb-1">
+                     {lang === 'vi' ? 'Ghi chú của bạn' : 'Your note'}
+                   </label>
+                   <textarea id="time-preference" rows={3} maxLength={200} disabled={submitting}
+                     value={customSlotNote}
+                     onChange={(e) => setCustomSlotNote(e.target.value)}
+                     placeholder={
+                       lang === 'vi'
+                         ? 'Ví dụ: Tôi rảnh chiều thứ Bảy, muốn thử mức Khó nếu phù hợp...'
+                         : 'e.g. Saturday afternoons work for me; I would like to try the Hard level...'
+                     }
+                     className="w-full border border-[rgba(10,10,10,0.18)] px-3.5 py-2.5 text-[13.5px] text-[#0a0a0a] focus:outline-none focus:border-[#c81e16] bg-white resize-y"
+                   />
                 </div>
               </div>
 
@@ -942,14 +735,14 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                     </>
                   ) : (
                     <span>
-                      {lang === 'vi' ? 'Gửi đăng ký giữ chỗ' : 'Confirm Registration'}
+                       {lang === 'vi' ? 'Gửi yêu cầu tham gia' : 'Send registration request'}
                     </span>
                   )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* 4. Swiss Numbered FAQ Section */}
@@ -957,30 +750,11 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
       {/* 5. Inverted CTA Band */}
       <ChunksCtaBand
-        onSelectGreen={() => {
-          setTestType('green');
-          scrollToForm();
-        }}
-        onSelectRed={() => {
-          setTestType('red');
-          scrollToForm();
-        }}
+        onSelectGreen={scrollToForm}
         lang={lang}
       />
 
       {/* Modals */}
-      <AssessmentDetailModal
-        info={selectedAssessmentModal}
-        isOpen={!!selectedAssessmentModal}
-        onClose={() => setSelectedAssessmentModal(null)}
-        lang={lang}
-        onSelectAndClose={(type) => {
-          setTestType(type);
-          setSelectedAssessmentModal(null);
-          scrollToForm();
-        }}
-      />
-
       <BookingSuccessModal
         candidate={confirmedCandidate}
         isOpen={!!confirmedCandidate}
