@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        ((request.auth.token.email == 'lucy2511kh@gmail.com' || request.auth.token.email == 'le.ntmkh@gmail.com') && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidCandidate(data) {
+      return data.keys().hasAll(['fullName', 'phone', 'email', 'ageRange', 'occupation', 'testType', 'preferredSlots', 'chunkerCode', 'status', 'createdAt']) &&
+        data.keys().hasOnly(['fullName', 'phone', 'email', 'ageRange', 'occupation', 'testType', 'testLevel', 'preferredSlots', 'selectedDate', 'selectedTimeSlot', 'chunkerCode', 'chunkerName', 'status', 'notes', 'createdAt', 'updatedAt', 'scheduledAt', 'confirmationEmailSent', 'confirmationEmailSentAt', 'confirmationEmailStatus']) &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 20 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.ageRange in ['<18', '18-24', '25-34', '35-44', '45+'] &&
+        data.occupation is string && data.occupation.size() <= 100 &&
+        data.testType in ['green', 'red'] &&
+        (!('testLevel' in data) || data.testLevel in ['easy', 'hard']) &&
+        (!('selectedDate' in data) || (data.selectedDate is string && data.selectedDate.size() <= 40)) &&
+        (!('selectedTimeSlot' in data) || (data.selectedTimeSlot is string && data.selectedTimeSlot.size() <= 80)) &&
+        (!('confirmationEmailSent' in data) || data.confirmationEmailSent is bool) &&
+        (!('confirmationEmailSentAt' in data) || data.confirmationEmailSentAt is timestamp || data.confirmationEmailSentAt is string) &&
+        (!('confirmationEmailStatus' in data) || data.confirmationEmailStatus in ['delivered', 'pending', 'failed', 'simulated']) &&
+        data.preferredSlots is string && data.preferredSlots.size() <= 250 &&
+        data.chunkerCode is string && data.chunkerCode.size() <= 30 &&
+        (!('chunkerName' in data) || (data.chunkerName is string && data.chunkerName.size() <= 100)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+        data.status in ['new', 'contacted', 'scheduled', 'completed', 'noshow'] &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSetting(data) {
+      return data.keys().hasAll(['notificationEmails', 'enabled']) &&
+        data.keys().hasOnly(['notificationEmails', 'enabled', 'updatedAt', 'updatedBy']) &&
+        data.notificationEmails is list && data.notificationEmails.size() <= 20 &&
+        data.enabled is bool;
+    }
+
+    function isValidChunker(data) {
+      return data.keys().hasAll(['name', 'code', 'email', 'active', 'referralCount', 'createdAt']) &&
+        data.keys().hasOnly(['name', 'code', 'email', 'active', 'referralCount', 'createdAt', 'notes']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+        data.code is string && data.code.size() >= 3 && data.code.size() <= 20 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.active is bool &&
+        data.referralCount is number &&
+        data.createdAt is timestamp;
+    }
+
+    // Admin permissions
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // System Settings (Admin only)
+    match /settings/{settingId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin() && isValidId(settingId) && isValidSetting(incoming());
+    }
+
+    // Chunkers (Public read for referral validation; admin write)
+    match /chunkers/{chunkerId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(chunkerId) && isValidChunker(incoming());
+      allow update: if (
+        (isAdmin() && isValidChunker(incoming())) ||
+        // Allow public candidate submission to increment referralCount atomically by 1
+        (isValidId(chunkerId) &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['referralCount']) &&
+         incoming().referralCount == existing().referralCount + 1)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Candidates (Public create under strict rules; admin read/update/delete)
+    match /candidates/{candidateId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(candidateId) &&
+        isValidCandidate(incoming()) &&
+        incoming().status == 'new' &&
+        incoming().createdAt == request.time;
+      allow update: if isAdmin() &&
+        isValidCandidate(incoming()) &&
+        incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin();
+    }
+
+    // Trigger Email Queue (Firestore Trigger Email Extension / Functions)
+    match /mail/{mailId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(mailId) &&
+        incoming().keys().hasAll(['to', 'message']) &&
+        incoming().to is string &&
+        incoming().message is map;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

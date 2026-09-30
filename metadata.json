@@ -1,0 +1,8 @@
+{
+  "name": "Remix Chunks Test 100",
+  "description": "Exclusive 1-on-1 booking \u0026 referral system for CHUNKS Theory pilot assessments (Green Focus Test %c \u0026 Red Improvisation Test %r).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
