@@ -1,572 +1,158 @@
-import { DatabaseSync } from 'node:sqlite';
-import fs from 'fs';
-import path from 'path';
-import { Candidate, Chunker, AdminNotificationSettings, CandidateStatus, TestLevel } from '../types';
-import { INITIAL_CHUNKERS, INITIAL_CANDIDATES } from '../constants/initialData';
+import { createHash } from 'node:crypto';
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import firebaseConfig from '../../firebase-applet-config.json';
+import { Candidate, Chunker, CandidateStatus, AdminNotificationSettings } from '../types';
 
-// Ensure data directory exists
-const DATA_DIR = path.resolve(process.cwd(), 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+const DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId;
+export const PROJECT_ID = firebaseConfig.projectId;
+const APP_NAME = 'chunks-server';
+
+export function getServerFirestore(): Firestore {
+  const app = getApps().find((entry) => entry.name === APP_NAME) ||
+    initializeApp({ projectId: PROJECT_ID }, APP_NAME);
+  return getFirestore(app, process.env.FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId);
 }
 
-const DB_PATH = path.join(DATA_DIR, 'chunks.db');
+export class RegistrationError extends Error {
+  constructor(public readonly code: 'CAPACITY_FULL' | 'DUPLICATE_PHONE' | 'INVALID_REFERRAL' | 'MIGRATION_REQUIRED') {
+    super({ CAPACITY_FULL: 'The pilot has reached its 100-registration capacity.', DUPLICATE_PHONE: 'This phone number already registered in the last 30 days.', INVALID_REFERRAL: 'Referral code is not active.', MIGRATION_REQUIRED: 'Campaign migration has not been completed.' }[code]);
+  }
+}
+
+export function normalizedPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return digits.startsWith('84') ? `0${digits.slice(2)}` : digits;
+}
+export function hashPhone(phone: string): string {
+  return createHash('sha256').update(normalizedPhone(phone)).digest('hex');
+}
+const candidateFrom = (id: string, data: FirebaseFirestore.DocumentData): Candidate => ({ id, ...data } as Candidate);
 
 class DatabaseService {
-  private db: DatabaseSync;
-  private static instance: DatabaseService;
+  private get db() { return getServerFirestore(); }
 
-  private constructor() {
-    console.log(`[DATABASE_INIT] Initializing persistent SQLite database at: ${DB_PATH}`);
-    this.db = new DatabaseSync(DB_PATH);
-
-    // Enable WAL mode for high concurrency and Foreign Keys
-    this.db.exec('PRAGMA journal_mode = WAL;');
-    this.db.exec('PRAGMA foreign_keys = ON;');
-
-    this.initSchema();
-    this.seedInitialDataIfEmpty();
-  }
-
-  public static getInstance(): DatabaseService {
-    if (!DatabaseService.instance) {
-      DatabaseService.instance = new DatabaseService();
-    }
-    return DatabaseService.instance;
-  }
-
-  private initSchema() {
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS chunkers (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        code TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL,
-        active INTEGER NOT NULL DEFAULT 1,
-        referralCount INTEGER NOT NULL DEFAULT 0,
-        secretToken TEXT,
-        notes TEXT,
-        createdAt TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS candidates (
-        id TEXT PRIMARY KEY,
-        fullName TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        email TEXT NOT NULL,
-        ageRange TEXT NOT NULL,
-        occupation TEXT NOT NULL,
-        testType TEXT NOT NULL,
-        testLevel TEXT NOT NULL DEFAULT 'easy',
-        preferredSlots TEXT NOT NULL,
-        selectedDate TEXT,
-        selectedTimeSlot TEXT,
-        chunkerCode TEXT NOT NULL,
-        chunkerName TEXT,
-        status TEXT NOT NULL DEFAULT 'NEW',
-        notes TEXT,
-        scheduledAt TEXT,
-        confirmationEmailSent INTEGER NOT NULL DEFAULT 0,
-        confirmationEmailSentAt TEXT,
-        confirmationEmailStatus TEXT NOT NULL DEFAULT 'pending',
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_candidates_created_at ON candidates(createdAt DESC);
-      CREATE INDEX IF NOT EXISTS idx_candidates_status ON candidates(status);
-      CREATE INDEX IF NOT EXISTS idx_candidates_chunker_code ON candidates(chunkerCode);
-      CREATE INDEX IF NOT EXISTS idx_chunkers_code ON chunkers(code);
-
-      CREATE TABLE IF NOT EXISTS notification_settings (
-        id TEXT PRIMARY KEY,
-        notificationEmails TEXT NOT NULL,
-        enabled INTEGER NOT NULL DEFAULT 1,
-        updatedAt TEXT NOT NULL,
-        updatedBy TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS notification_logs (
-        id TEXT PRIMARY KEY,
-        recipients TEXT NOT NULL,
-        candidateName TEXT,
-        phone TEXT,
-        email TEXT,
-        testType TEXT,
-        testLevel TEXT,
-        preferredSlots TEXT,
-        chunkerCode TEXT,
-        timestamp TEXT NOT NULL,
-        status TEXT NOT NULL,
-        errorDetails TEXT
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_notification_logs_time ON notification_logs(timestamp DESC);
-    `);
-  }
-
-  private seedInitialDataIfEmpty() {
-    const chunkerCountRow = this.db.prepare('SELECT COUNT(*) as count FROM chunkers').get() as { count: number };
-    if (chunkerCountRow.count === 0) {
-      console.log('[DATABASE_SEED] Seeding initial Chunkers into persistent database...');
-      const insertChunker = this.db.prepare(`
-        INSERT INTO chunkers (id, name, code, email, active, referralCount, secretToken, notes, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      for (const ch of INITIAL_CHUNKERS) {
-        insertChunker.run(
-          ch.id || `chk_${ch.code.toLowerCase()}`,
-          ch.name,
-          ch.code.toUpperCase(),
-          ch.email,
-          ch.active ? 1 : 0,
-          ch.referralCount || 0,
-          ch.secretToken || `SEC-${ch.code}`,
-          ch.notes || null,
-          ch.createdAt || new Date().toISOString()
-        );
-      }
-    }
-
-    const candidateCountRow = this.db.prepare('SELECT COUNT(*) as count FROM candidates').get() as { count: number };
-    if (candidateCountRow.count === 0) {
-      console.log('[DATABASE_SEED] Seeding baseline Candidates into persistent database...');
-      const insertCandidate = this.db.prepare(`
-        INSERT INTO candidates (
-          id, fullName, phone, email, ageRange, occupation, testType, testLevel,
-          preferredSlots, selectedDate, selectedTimeSlot, chunkerCode, chunkerName,
-          status, notes, scheduledAt, confirmationEmailSent, confirmationEmailSentAt,
-          confirmationEmailStatus, createdAt, updatedAt
-        ) VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        )
-      `);
-      for (const cand of INITIAL_CANDIDATES) {
-        insertCandidate.run(
-          cand.id || `seed_${Math.random().toString(36).substring(2, 7)}`,
-          cand.fullName,
-          cand.phone,
-          cand.email,
-          String(cand.ageRange),
-          cand.occupation,
-          cand.testType,
-          cand.testLevel || 'easy',
-          cand.preferredSlots,
-          cand.selectedDate || null,
-          cand.selectedTimeSlot || null,
-          (cand.chunkerCode || 'DIRECT').toUpperCase(),
-          cand.chunkerName || 'Direct Application',
-          cand.status.toUpperCase(),
-          cand.notes || null,
-          cand.scheduledAt || null,
-          cand.confirmationEmailSent ? 1 : 0,
-          cand.confirmationEmailSentAt || null,
-          cand.confirmationEmailStatus || 'delivered',
-          typeof cand.createdAt === 'string' ? cand.createdAt : new Date().toISOString(),
-          cand.updatedAt || null
-        );
-      }
-    }
-
-    const notifRow = this.db.prepare('SELECT COUNT(*) as count FROM notification_settings').get() as { count: number };
-    if (notifRow.count === 0) {
-      this.db.prepare(`
-        INSERT INTO notification_settings (id, notificationEmails, enabled, updatedAt, updatedBy)
-        VALUES ('default', ?, 1, ?, 'system')
-      `).run(JSON.stringify(['le.ntmkh@gmail.com']), new Date().toISOString());
-    }
-  }
-
-  // --- CANDIDATE MUTATIONS & QUERIES ---
-
-  public insertCandidate(c: Candidate): void {
-    console.log(`[DB_INSERT] Inserting candidate ${c.fullName} (${c.email}) into SQLite candidates table...`);
-    const stmt = this.db.prepare(`
-      INSERT INTO candidates (
-        id, fullName, phone, email, ageRange, occupation, testType, testLevel,
-        preferredSlots, selectedDate, selectedTimeSlot, chunkerCode, chunkerName,
-        status, notes, scheduledAt, confirmationEmailSent, confirmationEmailSentAt,
-        confirmationEmailStatus, createdAt, updatedAt
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-      )
-    `);
-
-    stmt.run(
-      c.id || `cand_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      c.fullName.trim(),
-      c.phone.trim(),
-      c.email.trim().toLowerCase(),
-      String(c.ageRange),
-      c.occupation.trim(),
-      c.testType,
-      c.testLevel || 'easy',
-      c.preferredSlots.trim(),
-      c.selectedDate || null,
-      c.selectedTimeSlot || null,
-      (c.chunkerCode || 'DIRECT').toUpperCase(),
-      c.chunkerName || 'Direct Application',
-      (c.status || 'NEW').toUpperCase(),
-      c.notes || null,
-      c.scheduledAt || null,
-      c.confirmationEmailSent ? 1 : 0,
-      c.confirmationEmailSentAt || null,
-      c.confirmationEmailStatus || 'pending',
-      c.createdAt || new Date().toISOString(),
-      c.updatedAt || new Date().toISOString()
-    );
-
-    // If candidate has valid referral code, increment chunker referral count
-    if (c.chunkerCode && c.chunkerCode.toUpperCase() !== 'DIRECT') {
-      this.incrementChunkerReferral(c.chunkerCode.toUpperCase());
-    }
-  }
-
-  public getCandidates(options: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    testType?: string;
-    testLevel?: string;
-    search?: string;
-  }): { candidates: Candidate[]; total: number; page: number; limit: number; totalPages: number } {
-    const page = Math.max(1, options.page || 1);
-    const limit = Math.min(100, Math.max(1, options.limit || 15));
-    const offset = (page - 1) * limit;
-
-    const conditions: string[] = [];
-    const params: any[] = [];
-
-    if (options.status && options.status !== 'all' && options.status !== 'ALL') {
-      conditions.push('UPPER(status) = ?');
-      params.push(options.status.toUpperCase());
-    }
-
-    if (options.testType && options.testType !== 'ALL' && options.testType !== 'all') {
-      conditions.push('LOWER(testType) = ?');
-      params.push(options.testType.toLowerCase());
-    }
-
-    if (options.testLevel && options.testLevel !== 'ALL' && options.testLevel !== 'all') {
-      conditions.push('LOWER(testLevel) = ?');
-      params.push(options.testLevel.toLowerCase());
-    }
-
-    if (options.search && options.search.trim()) {
-      const q = `%${options.search.trim().toLowerCase()}%`;
-      conditions.push('(LOWER(fullName) LIKE ? OR phone LIKE ? OR LOWER(email) LIKE ? OR UPPER(chunkerCode) LIKE ?)');
-      params.push(q, q, q, q);
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    const countRow = this.db.prepare(`SELECT COUNT(*) as total FROM candidates ${whereClause}`).get(...params) as { total: number };
-    const total = countRow.total;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-
-    const rows = this.db.prepare(`
-      SELECT * FROM candidates
-      ${whereClause}
-      ORDER BY createdAt DESC
-      LIMIT ? OFFSET ?
-    `).all(...params, limit, offset) as any[];
-
-    const candidates: Candidate[] = rows.map((r) => ({
-      id: r.id,
-      fullName: r.fullName,
-      phone: r.phone,
-      email: r.email,
-      ageRange: r.ageRange,
-      occupation: r.occupation,
-      testType: r.testType as any,
-      testLevel: r.testLevel as any,
-      preferredSlots: r.preferredSlots,
-      selectedDate: r.selectedDate || undefined,
-      selectedTimeSlot: r.selectedTimeSlot || undefined,
-      chunkerCode: r.chunkerCode,
-      chunkerName: r.chunkerName || undefined,
-      status: (r.status || 'new').toLowerCase() as CandidateStatus,
-      notes: r.notes || undefined,
-      scheduledAt: r.scheduledAt || undefined,
-      confirmationEmailSent: Boolean(r.confirmationEmailSent),
-      confirmationEmailSentAt: r.confirmationEmailSentAt || undefined,
-      confirmationEmailStatus: r.confirmationEmailStatus as any,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt || undefined,
-    }));
-
-    return { candidates, total, page, limit, totalPages };
-  }
-
-  public getCandidateById(id: string): Candidate | null {
-    const row = this.db.prepare('SELECT * FROM candidates WHERE id = ?').get(id) as any;
-    if (!row) return null;
-    return {
-      id: row.id,
-      fullName: row.fullName,
-      phone: row.phone,
-      email: row.email,
-      ageRange: row.ageRange,
-      occupation: row.occupation,
-      testType: row.testType,
-      testLevel: row.testLevel,
-      preferredSlots: row.preferredSlots,
-      selectedDate: row.selectedDate || undefined,
-      selectedTimeSlot: row.selectedTimeSlot || undefined,
-      chunkerCode: row.chunkerCode,
-      chunkerName: row.chunkerName || undefined,
-      status: (row.status || 'new').toLowerCase() as CandidateStatus,
-      notes: row.notes || undefined,
-      scheduledAt: row.scheduledAt || undefined,
-      confirmationEmailSent: Boolean(row.confirmationEmailSent),
-      confirmationEmailSentAt: row.confirmationEmailSentAt || undefined,
-      confirmationEmailStatus: row.confirmationEmailStatus,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt || undefined,
-    };
-  }
-
-  public updateCandidateStatus(id: string, status: CandidateStatus, notes?: string): boolean {
-    const normalized = status.toUpperCase();
-    const now = new Date().toISOString();
-    let stmt;
-    if (notes !== undefined) {
-      stmt = this.db.prepare('UPDATE candidates SET status = ?, notes = ?, updatedAt = ? WHERE id = ?');
-      stmt.run(normalized, notes, now, id);
-    } else {
-      stmt = this.db.prepare('UPDATE candidates SET status = ?, updatedAt = ? WHERE id = ?');
-      stmt.run(normalized, now, id);
-    }
-    return true;
-  }
-
-  public updateCandidateEmailStatus(id: string, sent: boolean, status: string, sentAt?: string): void {
-    const stmt = this.db.prepare(`
-      UPDATE candidates
-      SET confirmationEmailSent = ?, confirmationEmailStatus = ?, confirmationEmailSentAt = ?, updatedAt = ?
-      WHERE id = ?
-    `);
-    const now = new Date().toISOString();
-    stmt.run(sent ? 1 : 0, status, sentAt || now, now, id);
-  }
-
-  // --- CHUNKER MUTATIONS & QUERIES ---
-
-  public getChunkers(): Chunker[] {
-    const rows = this.db.prepare('SELECT * FROM chunkers ORDER BY referralCount DESC, name ASC').all() as any[];
-    return rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      code: r.code,
-      email: r.email,
-      active: Boolean(r.active),
-      referralCount: r.referralCount,
-      secretToken: r.secretToken,
-      notes: r.notes || undefined,
-      createdAt: r.createdAt,
-    }));
-  }
-
-  public getChunkerByCode(code: string): Chunker | null {
-    const clean = code.trim().toUpperCase();
-    const row = this.db.prepare('SELECT * FROM chunkers WHERE UPPER(code) = ?').get(clean) as any;
-    if (!row) return null;
-    return {
-      id: row.id,
-      name: row.name,
-      code: row.code,
-      email: row.email,
-      active: Boolean(row.active),
-      referralCount: row.referralCount,
-      secretToken: row.secretToken,
-      notes: row.notes || undefined,
-      createdAt: row.createdAt,
-    };
-  }
-
-  public incrementChunkerReferral(code: string): void {
-    const clean = code.trim().toUpperCase();
-    this.db.prepare('UPDATE chunkers SET referralCount = referralCount + 1 WHERE UPPER(code) = ?').run(clean);
-  }
-
-  public createChunker(ch: { name: string; code: string; email: string; notes?: string }): Chunker {
-    const cleanCode = ch.code.trim().toUpperCase();
-    const id = `chk_${Date.now().toString(36)}`;
-    const secretToken = `SEC-${cleanCode}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    const now = new Date().toISOString();
-
-    this.db.prepare(`
-      INSERT INTO chunkers (id, name, code, email, active, referralCount, secretToken, notes, createdAt)
-      VALUES (?, ?, ?, ?, 1, 0, ?, ?, ?)
-    `).run(id, ch.name.trim(), cleanCode, ch.email.trim(), secretToken, ch.notes || null, now);
-
-    return {
-      id,
-      name: ch.name.trim(),
-      code: cleanCode,
-      email: ch.email.trim(),
-      active: true,
-      referralCount: 0,
-      secretToken,
-      notes: ch.notes,
-      createdAt: now,
-    };
-  }
-
-  // --- METRICS ---
-
-  public getMetrics(): {
-    target: number;
-    totalRegistered: number;
-    greenCount: number;
-    redCount: number;
-    topChunkers: { name: string; code: string; email: string; referralCount: number }[];
-  } {
-    const totalRow = this.db.prepare('SELECT COUNT(*) as c FROM candidates').get() as { c: number };
-    const greenRow = this.db.prepare("SELECT COUNT(*) as c FROM candidates WHERE LOWER(testType) = 'green'").get() as { c: number };
-    const redRow = this.db.prepare("SELECT COUNT(*) as c FROM candidates WHERE LOWER(testType) = 'red'").get() as { c: number };
-
-    const topChunkersRows = this.db.prepare(`
-      SELECT name, code, email, referralCount
-      FROM chunkers
-      WHERE active = 1
-      ORDER BY referralCount DESC, name ASC
-      LIMIT 5
-    `).all() as any[];
-
-    return {
-      target: 100,
-      totalRegistered: totalRow.c,
-      greenCount: greenRow.c,
-      redCount: redRow.c,
-      topChunkers: topChunkersRows.map((r) => ({
-        name: r.name,
-        code: r.code,
-        email: r.email,
-        referralCount: r.referralCount,
-      })),
-    };
-  }
-
-  // --- NOTIFICATION SETTINGS & LOGS ---
-
-  public getNotificationSettings(): AdminNotificationSettings {
-    const row = this.db.prepare('SELECT * FROM notification_settings WHERE id = ?').get('default') as any;
-    if (!row) {
-      return {
-        notificationEmails: ['le.ntmkh@gmail.com'],
-        enabled: true,
-        updatedAt: new Date().toISOString(),
-        updatedBy: 'system',
-      };
-    }
-    return {
-      notificationEmails: JSON.parse(row.notificationEmails),
-      enabled: Boolean(row.enabled),
-      updatedAt: row.updatedAt,
-      updatedBy: row.updatedBy,
-    };
-  }
-
-  public saveNotificationSettings(settings: { notificationEmails: string[]; enabled: boolean }, userEmail = 'admin'): void {
-    const now = new Date().toISOString();
-    this.db.prepare(`
-      INSERT OR REPLACE INTO notification_settings (id, notificationEmails, enabled, updatedAt, updatedBy)
-      VALUES ('default', ?, ?, ?, ?)
-    `).run(JSON.stringify(settings.notificationEmails), settings.enabled ? 1 : 0, now, userEmail);
-  }
-
-  public addNotificationLog(log: {
-    id?: string;
-    recipients: string[];
-    candidateName: string;
-    phone: string;
-    email: string;
-    testType: string;
-    testLevel: string;
-    preferredSlots: string;
-    chunkerCode: string;
-    status: 'sent' | 'failed' | 'simulated';
-    errorDetails?: string;
-  }): void {
-    const id = log.id || `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const now = new Date().toISOString();
-    this.db.prepare(`
-      INSERT INTO notification_logs (
-        id, recipients, candidateName, phone, email, testType, testLevel,
-        preferredSlots, chunkerCode, timestamp, status, errorDetails
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      JSON.stringify(log.recipients),
-      log.candidateName,
-      log.phone,
-      log.email,
-      log.testType,
-      log.testLevel,
-      log.preferredSlots,
-      log.chunkerCode,
-      now,
-      log.status,
-      log.errorDetails || null
-    );
-  }
-
-  public getNotificationLogs(limit = 20): any[] {
-    const rows = this.db.prepare(`
-      SELECT * FROM notification_logs
-      ORDER BY timestamp DESC
-      LIMIT ?
-    `).all(limit) as any[];
-
-    return rows.map((r) => ({
-      id: r.id,
-      recipients: JSON.parse(r.recipients),
-      candidateName: r.candidateName,
-      phone: r.phone,
-      email: r.email,
-      testType: r.testType,
-      testLevel: r.testLevel,
-      preferredSlots: r.preferredSlots,
-      chunkerCode: r.chunkerCode,
-      timestamp: r.timestamp,
-      status: r.status,
-      errorDetails: r.errorDetails || undefined,
-    }));
-  }
-
-  // --- HEALTHCHECK ---
-
-  public getHealth(): {
-    status: string;
-    dbConnected: boolean;
-    totalCandidatesInDB: number;
-    totalChunkersInDB: number;
-    dbPath: string;
-    timestamp: string;
-  } {
+  async getHealth() {
     try {
-      const candCount = (this.db.prepare('SELECT COUNT(*) as c FROM candidates').get() as { c: number }).c;
-      const chkCount = (this.db.prepare('SELECT COUNT(*) as c FROM chunkers').get() as { c: number }).c;
-      return {
-        status: 'ok',
-        dbConnected: true,
-        totalCandidatesInDB: candCount,
-        totalChunkersInDB: chkCount,
-        dbPath: DB_PATH,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (e: any) {
-      return {
-        status: 'error',
-        dbConnected: false,
-        totalCandidatesInDB: 0,
-        totalChunkersInDB: 0,
-        dbPath: DB_PATH,
-        timestamp: new Date().toISOString(),
-      };
+      const [state, chunkers] = await Promise.all([
+        this.db.doc('campaign/state').get(), this.db.collection('chunkers').count().get(),
+      ]);
+      const initialized = state.exists && state.get('migrationComplete') === true;
+      return { status: initialized ? 'ok' : 'uninitialized', dbConnected: initialized, totalCandidatesInDB: state.get('totalRegistered') || 0, totalChunkersInDB: chunkers.data().count, timestamp: new Date().toISOString(), databaseId: process.env.FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId };
+    } catch {
+      return { status: 'error', dbConnected: false, totalCandidatesInDB: 0, totalChunkersInDB: 0, timestamp: new Date().toISOString(), databaseId: DATABASE_ID };
     }
+  }
+
+  async getChunkerByCode(code: string): Promise<Chunker | null> {
+    const snap = await this.db.collection('chunkers').doc(code.trim().toUpperCase()).get();
+    return snap.exists ? { id: snap.id, ...snap.data() } as Chunker : null;
+  }
+
+  async getChunkers(): Promise<Chunker[]> {
+    const snap = await this.db.collection('chunkers').get();
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Chunker));
+  }
+
+  async createChunker(data: { name: string; code: string; email: string; notes?: string }): Promise<Chunker> {
+    const code = data.code.trim().toUpperCase();
+    const chunker: Chunker = { id: code, name: data.name.trim(), code, email: data.email.trim().toLowerCase(), active: true, referralCount: 0, notes: data.notes || '', createdAt: new Date().toISOString() };
+    await this.db.collection('chunkers').doc(code).create(chunker);
+    return chunker;
+  }
+
+  async registerCandidate(input: Candidate): Promise<Candidate> {
+    const db = this.db;
+    const now = new Date();
+    const code = input.chunkerCode.trim().toUpperCase();
+    const ref = db.collection('chunkers').doc(code);
+    const stateRef = db.doc('campaign/state');
+    const lockRef = db.collection('phoneLocks').doc(hashPhone(input.phone));
+    const candidateRef = db.collection('candidates').doc();
+    return db.runTransaction(async (tx) => {
+      // All reads precede writes. Contention on campaign/state serializes the 100 cap.
+      const [state, chunker, lock, settings] = await Promise.all([
+        tx.get(stateRef), tx.get(ref), tx.get(lockRef), tx.get(db.doc('settings/notifications')),
+      ]);
+      if (!state.exists || state.get('migrationComplete') !== true) throw new RegistrationError('MIGRATION_REQUIRED');
+      if (!chunker.exists || chunker.get('active') !== true) throw new RegistrationError('INVALID_REFERRAL');
+      const total = state.get('totalRegistered');
+      if (!Number.isInteger(total) || total < 0 || total > 100 ||
+        !Number.isInteger(state.get('greenCount')) || !Number.isInteger(state.get('redCount')) ||
+        state.get('greenCount') + state.get('redCount') !== total) throw new RegistrationError('MIGRATION_REQUIRED');
+      if (total >= 100) throw new RegistrationError('CAPACITY_FULL');
+      const lastRegistrationAt = lock.get('lastRegistrationAt');
+      if (lock.exists && (!Number.isInteger(lastRegistrationAt) || lastRegistrationAt > now.getTime() ||
+        now.getTime() - lastRegistrationAt < 30 * 24 * 60 * 60 * 1000)) throw new RegistrationError('DUPLICATE_PHONE');
+      const candidate: Candidate = {
+        ...input, id: candidateRef.id, phone: input.phone.trim(), email: input.email.trim().toLowerCase(),
+        chunkerCode: code, chunkerName: chunker.get('name'), status: 'new',
+        confirmationEmailSent: false, confirmationEmailStatus: 'pending',
+        createdAt: now.toISOString(), updatedAt: now.toISOString(),
+      };
+      tx.create(candidateRef, Object.fromEntries(Object.entries(candidate).filter(([, value]) => value !== undefined)));
+      tx.set(lockRef, { lastRegistrationAt: now.getTime(), candidateId: candidateRef.id });
+      tx.update(stateRef, { totalRegistered: total + 1, greenCount: (state.get('greenCount') || 0) + Number(candidate.testType === 'green'), redCount: (state.get('redCount') || 0) + Number(candidate.testType === 'red') });
+      tx.update(ref, { referralCount: (chunker.get('referralCount') || 0) + 1 });
+      tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_candidate`), { candidateId: candidateRef.id, kind: 'candidate', recipients: [candidate.email], status: 'pending', attempts: 0, nextAttemptAt: now.getTime(), createdAt: now.toISOString() });
+      const recipients = settings.get('notificationEmails');
+      if (settings.get('enabled') === true && Array.isArray(recipients) && recipients.length) {
+        tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_admin`), { candidateId: candidateRef.id, kind: 'admin', recipients, status: 'pending', attempts: 0, nextAttemptAt: now.getTime(), createdAt: now.toISOString() });
+      }
+      return candidate;
+    });
+  }
+
+  async getCandidates(options: { page?: number; limit?: number; status?: string; testType?: string; testLevel?: string; search?: string } = {}) {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(1000, Math.max(1, options.limit || 15));
+    // Pilot collection is capped at 100; filter before paging to preserve semantics.
+    const docs = await this.db.collection('candidates').get();
+    const search = options.search?.trim().toLowerCase();
+    const matches = docs.docs.map((doc) => candidateFrom(doc.id, doc.data())).filter((candidate) =>
+      (!options.status || options.status.toLowerCase() === 'all' || candidate.status === options.status.toLowerCase()) &&
+      (!options.testType || options.testType.toLowerCase() === 'all' || candidate.testType === options.testType.toLowerCase()) &&
+      (!options.testLevel || options.testLevel.toLowerCase() === 'all' || candidate.testLevel === options.testLevel.toLowerCase()) &&
+      (!search || [candidate.fullName, candidate.phone, candidate.email, candidate.chunkerCode].some((value) => value?.toLowerCase().includes(search)))
+    ).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    return { candidates: matches.slice((page - 1) * limit, page * limit), total: matches.length, page, limit, totalPages: Math.ceil(matches.length / limit) };
+  }
+
+  async getCandidateById(id: string): Promise<Candidate | null> {
+    const doc = await this.db.collection('candidates').doc(id).get();
+    return doc.exists ? candidateFrom(doc.id, doc.data()!) : null;
+  }
+
+  async updateCandidateStatus(id: string, status: CandidateStatus, notes?: string) {
+    await this.db.collection('candidates').doc(id).update({ status, ...(notes !== undefined ? { notes } : {}), updatedAt: new Date().toISOString() });
+  }
+
+
+  async getMetrics() {
+    const [state, chunkers] = await Promise.all([this.db.doc('campaign/state').get(), this.getChunkers()]);
+    if (!state.exists || state.get('migrationComplete') !== true) throw new RegistrationError('MIGRATION_REQUIRED');
+    return { target: 100, totalRegistered: state.get('totalRegistered') || 0, greenCount: state.get('greenCount') || 0, redCount: state.get('redCount') || 0, topChunkers: chunkers.sort((a, b) => (b.referralCount || 0) - (a.referralCount || 0)).slice(0, 10) };
+  }
+
+  async getNotificationSettings(): Promise<AdminNotificationSettings> {
+    const doc = await this.db.doc('settings/notifications').get();
+    return doc.exists ? doc.data() as AdminNotificationSettings : { enabled: false, notificationEmails: [] };
+  }
+
+  async saveNotificationSettings(settings: { notificationEmails: string[]; enabled: boolean }, email: string) {
+    const value = { ...settings, updatedBy: email, updatedAt: new Date().toISOString() };
+    await this.db.doc('settings/notifications').set(value);
+    return value;
+  }
+
+  async addNotificationLog(log: Record<string, unknown>) {
+    await this.db.collection('notificationLogs').add({ ...log, createdAt: new Date().toISOString() });
+  }
+
+  async getNotificationLogs(limit = 10) {
+    const docs = await this.db.collection('notificationLogs').orderBy('createdAt', 'desc').limit(limit).get();
+    return docs.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 }
 
-export const dbService = DatabaseService.getInstance();
+export const dbService = new DatabaseService();

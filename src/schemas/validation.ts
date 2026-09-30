@@ -1,5 +1,4 @@
 import { z } from 'zod';
-export type { MaskedCandidateForChunker } from '../utils/masking';
 
 // Group A: Public / Candidate Schemas
 export const referralQuerySchema = z.object({
@@ -43,8 +42,8 @@ export const candidateRegisterSchema = z.object({
     .trim()
     .max(30, 'Referral code too long')
     .optional()
-    .default('DIRECT')
-    .transform((val) => val || 'DIRECT'),
+    .default('PILOT100')
+    .transform((val) => val || 'PILOT100'),
   fullName: z
     .string()
     .trim()
@@ -100,8 +99,8 @@ export function createCandidateRegistrationSchema(lang: 'vi' | 'en') {
       .trim()
       .max(30, isVi ? 'Mã giới thiệu quá dài' : 'Referral code too long')
       .optional()
-      .default('DIRECT')
-      .transform((val) => val || 'DIRECT'),
+      .default('PILOT100')
+      .transform((val) => val || 'PILOT100'),
     fullName: z
       .string()
       .trim()
@@ -161,17 +160,6 @@ export const notificationSettingsSchema = z.object({
 
 export type CandidateRegisterInput = z.infer<typeof candidateRegisterSchema>;
 
-// Group B: Chunker Scoped Schemas
-export const chunkerStatsQuerySchema = z.object({
-  code: z
-    .string()
-    .trim()
-    .min(2)
-    .max(30)
-    .regex(/^[A-Za-z0-9_-]+$/),
-  token: z.string().trim().min(3, 'Secret token is required').max(100),
-});
-
 // Group C: Admin Protected Schemas
 export const adminCandidatesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -210,7 +198,6 @@ export const createChunkerSchema = z.object({
     .min(3)
     .max(20)
     .regex(/^[A-Za-z0-9_-]+$/),
-  secretToken: z.string().trim().min(4).max(64).optional(),
   notes: z.string().max(500).optional(),
 }).refine((data) => data.fullName || data.name, {
   message: 'Either fullName or name must be provided',

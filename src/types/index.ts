@@ -25,7 +25,7 @@ export interface Candidate {
   scheduledAt?: string;
   confirmationEmailSent?: boolean;
   confirmationEmailSentAt?: string;
-  confirmationEmailStatus?: 'delivered' | 'pending' | 'failed' | 'simulated';
+  confirmationEmailStatus?: 'accepted' | 'pending' | 'failed';
   createdAt: any; // Timestamp or ISO string
   updatedAt?: any;
 }
@@ -37,38 +37,18 @@ export interface AdminNotificationSettings {
   updatedBy?: string;
 }
 
-export interface NotificationLog {
-  id: string;
-  recipient: string;
-  subject: string;
-  candidateName: string;
-  testType: string;
-  testLevel: string;
-  timestamp: string;
-  status: 'sent' | 'simulated';
-}
 
 export interface Chunker {
   id?: string;
   name: string;
   code: string;
   email: string;
-  phone?: string;
-  secretToken?: string;
   active: boolean;
   referralCount: number;
-  createdAt: any;
+  createdAt: string;
   notes?: string;
 }
 
-export type Chunkee = Chunker;
-
-export interface AdminUser {
-  uid: string;
-  email: string;
-  role: 'super_admin' | 'ops_admin';
-  name?: string;
-}
 
 export interface TimeSlotOption {
   id: string;
@@ -94,15 +74,6 @@ export interface AssessmentInfo {
   coreQuestionEn: string;
   focusVi: string;
   focusEn: string;
-  levels: {
-    level: number;
-    nameVi: string;
-    nameEn: string;
-    focusVi: string;
-    focusEn: string;
-    detailVi: string;
-    detailEn: string;
-  }[];
   theoryHighlightsVi: string[];
   theoryHighlightsEn: string[];
 }

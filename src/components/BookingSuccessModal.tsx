@@ -73,12 +73,12 @@ export const BookingSuccessModal: React.FC<Props> = ({
         <div className="mt-6 space-y-5">
           <div>
             <h3 className="text-[24px] sm:text-[28px] font-semibold tracking-[-0.03em] leading-tight">
-              {lang === 'vi' ? 'Đăng ký thành công.' : 'Reservation confirmed.'}
+              {lang === 'vi' ? 'Đã ghi nhận yêu cầu.' : 'Registration request received.'}
             </h3>
             <p className="text-[14.5px] text-[#0a0a0a]/70 font-light mt-1">
               {lang === 'vi'
-                ? `Chào ${candidate.fullName}, bạn đã giữ 1 trong 100 suất đánh giá 1-on-1.`
-                : `Hello ${candidate.fullName}, you have secured 1 of the 100 1-on-1 assessment seats.`}
+                ? `Chào ${candidate.fullName}, yêu cầu tham gia chương trình thử nghiệm đã được ghi nhận. Lịch đánh giá sẽ được xác nhận riêng.`
+                : `Hello ${candidate.fullName}, your pilot registration request was received. Your assessment time will be confirmed separately.`}
             </p>
           </div>
 
@@ -127,8 +127,8 @@ export const BookingSuccessModal: React.FC<Props> = ({
             </span>
             <p className="text-[#0a0a0a]/80 font-light">
               {lang === 'vi'
-                ? 'Đội ngũ điều phối CHUNKS sẽ nhắn tin qua Zalo hoặc gọi trực tiếp trong 24 giờ để chốt lịch chính xác với CiC.'
-                : 'The CHUNKS operations team will reach out via Zalo or phone within 24 hours to lock your exact session.'}
+                ? 'Đội ngũ điều phối CHUNKS cần liên hệ qua Zalo hoặc điện thoại để xác nhận lịch với CiC. Khung giờ đã chọn chỉ là ưu tiên của bạn.'
+                : 'The CHUNKS operations team needs to contact you by Zalo or phone to confirm your appointment with a CiC. Your selected time is a preference only.'}
             </p>
           </div>
 

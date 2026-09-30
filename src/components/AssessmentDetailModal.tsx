@@ -34,7 +34,7 @@ export const AssessmentDetailModal: React.FC<Props> = ({
             <div className="flex items-center gap-2 mb-2">
               <div className="w-[14px] h-[14px] rounded-[2px] bg-[#ff3b30]" aria-hidden="true" />
               <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#c81e16]">
-                {isGreen ? 'GREEN TEST · %C FOCUS' : 'RED TEST · %R IMPROV'}
+                {isGreen ? 'GREEN TEST · %c FOCUS' : 'RED TEST · %r IMPROV'}
               </span>
             </div>
             <h3 className="text-[22px] sm:text-[26px] font-semibold text-[#0a0a0a] tracking-tight leading-tight">
@@ -113,31 +113,23 @@ export const AssessmentDetailModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* 7 Progressive Levels */}
           <div>
             <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 mb-3">
-              {lang === 'vi' ? 'Lộ trình 7 cấp độ tiến triển' : '7 Progressive Levels'}
+              {lang === 'vi' ? 'Theo CHUNKS Theory MN107.v2.1' : 'Based on CHUNKS Theory MN107.v2.1'}
             </span>
-            <div className="border border-[rgba(10,10,10,0.14)] divide-y divide-[rgba(10,10,10,0.14)]">
-              {info.levels.map((lvl) => (
-                <div
-                  key={lvl.level}
-                  className="p-3.5 flex items-start gap-4 hover:bg-slate-50 transition-colors"
-                >
-                  <span className="text-[13px] font-mono font-semibold tabular-nums text-[#c81e16] shrink-0">
-                    0{lvl.level}
-                  </span>
-                  <div>
-                    <h5 className="text-[13.5px] font-medium text-[#0a0a0a]">
-                      {lang === 'vi' ? lvl.nameVi : lvl.nameEn}
-                    </h5>
-                    <p className="text-[12.5px] text-[#0a0a0a]/65 font-light mt-0.5">
-                      {lang === 'vi' ? lvl.focusVi : lvl.focusEn} — {lang === 'vi' ? lvl.detailVi : lvl.detailEn}
-                    </p>
-                  </div>
-                </div>
+            <ul className="space-y-2 list-disc pl-5 text-[13px] text-[#0a0a0a]/75">
+              {(lang === 'vi' ? info.theoryHighlightsVi : info.theoryHighlightsEn).map((highlight) => (
+                <li key={highlight}>{highlight}</li>
               ))}
-            </div>
+            </ul>
+            <a
+              href="https://chunkstheory.com/chunks-theory-2026-7-pages/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4 text-[13px] font-medium text-[#c81e16] underline"
+            >
+              {lang === 'vi' ? 'Đọc bản lý thuyết chính thức' : 'Read the official theory'}
+            </a>
           </div>
         </div>
 

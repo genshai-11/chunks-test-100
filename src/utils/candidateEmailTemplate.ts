@@ -16,6 +16,7 @@ export interface CandidateEmailData {
   createdAt?: string;
 }
 
+import { escapeHtml } from './escapeHtml';
 export function generateCandidateEmailContent(data: CandidateEmailData): {
   subject: string;
   html: string;
@@ -49,7 +50,7 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${escapeHtml(subject)}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f7f7f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0a0a0a; line-height: 1.6;">
   <div style="max-width: 620px; margin: 32px auto; background: #ffffff; border: 1px solid rgba(10, 10, 10, 0.12); box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
@@ -64,14 +65,14 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
           CHUNKS TEST 100 · MSE THEORY
         </span>
         <span style="font-size: 11px; font-family: monospace; color: #666; background: #f4f4f5; padding: 3px 8px; border: 1px solid #e4e4e7;">
-          ID: ${data.candidateId}
+          ID: ${escapeHtml(data.candidateId)}
         </span>
       </div>
       <h1 style="font-size: 22px; font-weight: 700; color: #0a0a0a; margin: 0 0 8px 0; line-height: 1.3;">
         Xác Nhận Giữ Chỗ Đánh Giá 1-on-1 Thành Công
       </h1>
       <p style="font-size: 14px; color: #52525b; margin: 0;">
-        Kính gửi <strong>${data.fullName}</strong>, yêu cầu tham gia đánh giá trực tiếp của bạn đã được ghi nhận trên hệ thống CHUNKS Test 100.
+        Kính gửi <strong>${escapeHtml(data.fullName)}</strong>, yêu cầu tham gia đánh giá trực tiếp của bạn đã được ghi nhận trên hệ thống CHUNKS Test 100.
       </p>
     </div>
 
@@ -111,21 +112,21 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
       <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13px;">
         <div>
           <span style="color: #71717a;">Khung giờ ưu tiên:</span>
-          <strong style="color: #0a0a0a; margin-left: 6px;">${data.preferredSlots}</strong>
+          <strong style="color: #0a0a0a; margin-left: 6px;">${escapeHtml(data.preferredSlots)}</strong>
         </div>
         <div>
           <span style="color: #71717a;">Số điện thoại:</span>
-          <strong style="color: #0a0a0a; margin-left: 6px;">${data.phone}</strong>
+          <strong style="color: #0a0a0a; margin-left: 6px;">${escapeHtml(data.phone)}</strong>
         </div>
         <div>
           <span style="color: #71717a;">Email đăng ký:</span>
-          <strong style="color: #0a0a0a; margin-left: 6px;">${data.email}</strong>
+          <strong style="color: #0a0a0a; margin-left: 6px;">${escapeHtml(data.email)}</strong>
         </div>
         ${
-          data.chunkerCode && data.chunkerCode !== 'DIRECT'
+          data.chunkerCode && data.chunkerCode !== 'DIRECT' && data.chunkerCode !== 'PILOT100'
             ? `<div>
                 <span style="color: #71717a;">Mã mời (Referral):</span>
-                <strong style="color: #c81e16; margin-left: 6px;">${data.chunkerCode} ${data.chunkerName ? `(${data.chunkerName})` : ''}</strong>
+                <strong style="color: #c81e16; margin-left: 6px;">${escapeHtml(data.chunkerCode)} ${data.chunkerName ? `(${escapeHtml(data.chunkerName)})` : ''}</strong>
               </div>`
             : `<div>
                 <span style="color: #71717a;">Hình thức:</span>
@@ -151,7 +152,7 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
           <strong>Không gian yên tĩnh:</strong> Chọn không gian riêng tư, hạn chế tiếng ồn xung quanh để chuyên viên CiC (Chunker-in-Charge) có thể đo đạc trường âm thanh chuẩn xác nhất.
         </li>
         <li>
-          <strong>Liên hệ xác nhận:</strong> Bộ phận điều phối sẽ chủ động gọi điện hoặc nhắn tin Zalo tới số <strong>${data.phone}</strong> của bạn trước buổi đánh giá để chốt giờ chính xác và gửi link phòng họp bảo mật.
+          <strong>Liên hệ xác nhận:</strong> Bộ phận điều phối sẽ chủ động gọi điện hoặc nhắn tin Zalo tới số <strong>${escapeHtml(data.phone)}</strong> của bạn trước buổi đánh giá để chốt giờ chính xác và gửi link phòng họp bảo mật.
         </li>
       </ul>
     </div>
@@ -188,7 +189,7 @@ CHI TIẾT ĐĂNG KÝ:
 - Level muốn test: ${testLevelName}
   (${testLevelDesc})
 - Khung giờ ưu tiên: ${data.preferredSlots}
-- Mã giới thiệu: ${data.chunkerCode || 'DIRECT'}
+- Mã giới thiệu: ${data.chunkerCode || 'PILOT100'}
 
 HƯỚNG DẪN CHUẨN BỊ:
 -------------------
@@ -199,7 +200,6 @@ HƯỚNG DẪN CHUẨN BỊ:
 
 Trân trọng,
 Hệ thống Đánh giá CHUNKS Test 100
-(Automated Firebase Cloud Function Dispatch)
 `;
 
   return { subject, html, text };

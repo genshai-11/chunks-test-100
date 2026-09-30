@@ -1,11 +1,12 @@
+import { escapeHtml } from '../utils/escapeHtml';
 import nodemailer from 'nodemailer';
-import { generateCandidateEmailContent, CandidateEmailData } from '../utils/candidateEmailTemplate';
 import { Candidate } from '../types';
 
 export interface EmailDispatchResult {
   success: boolean;
+  status: 'accepted' | 'failed';
   messageId?: string;
-  provider: 'resend' | 'smtp' | 'simulated' | 'none';
+  provider: 'resend' | 'smtp' | 'none';
   error?: string;
 }
 
@@ -23,23 +24,24 @@ export function getEmailProviderStatus(): {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
 
-  if (resendApiKey) {
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'CHUNKS Test 100 <onboarding@resend.dev>';
+  if (resendApiKey && process.env.RESEND_FROM_EMAIL) {
+    const fromEmail = process.env.RESEND_FROM_EMAIL;
     return {
       configured: true,
       provider: 'resend',
-      fromEmail,
-      details: `Resend API configured (Key prefix: ${resendApiKey.substring(0, 7)}...)`,
+      fromEmail: fromEmail!,
+      details: 'Resend configured',
     };
   }
 
   if (smtpHost && smtpUser && smtpPass) {
-    const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || process.env.SMTP_FROM || smtpUser;
+    const rawFrom = process.env.NOTIFICATION_FROM_EMAIL || process.env.SMTP_FROM || smtpUser;
+    const fromEmail = rawFrom.includes('<') ? rawFrom : `"CHUNKS Operations" <${rawFrom}>`;
     return {
       configured: true,
       provider: 'smtp',
-      fromEmail: `"CHUNKS Operations" <${fromEmail}>`,
-      details: `SMTP configured (${smtpHost}:${process.env.SMTP_PORT || 587}, User: ${smtpUser})`,
+      fromEmail,
+      details: 'SMTP configured',
     };
   }
 
@@ -47,7 +49,7 @@ export function getEmailProviderStatus(): {
     configured: false,
     provider: 'none',
     fromEmail: 'none',
-    details: 'Missing credentials. Set RESEND_API_KEY or SMTP_HOST/SMTP_USER/SMTP_PASS in .env',
+    details: 'Missing provider credentials or verified sender',
   };
 }
 
@@ -55,15 +57,13 @@ export function getEmailProviderStatus(): {
  * Dispatch raw email using Resend HTTP API or Nodemailer SMTP with detailed logging
  */
 export async function sendEmail({
-  to,
-  subject,
-  html,
-  text,
+  to, subject, html, text, idempotencyKey,
 }: {
   to: string | string[];
   subject: string;
   html: string;
   text?: string;
+  idempotencyKey?: string;
 }): Promise<EmailDispatchResult> {
   const recipients = Array.isArray(to) ? to : [to];
   const status = getEmailProviderStatus();
@@ -71,15 +71,16 @@ export async function sendEmail({
   // 1. Resend API
   if (status.provider === 'resend') {
     const apiKey = process.env.RESEND_API_KEY!;
-    const from = process.env.RESEND_FROM_EMAIL || 'CHUNKS Test 100 <onboarding@resend.dev>';
+    const from = status.fromEmail;
 
     try {
-      console.log(`[EMAIL_DISPATCH:RESEND] Sending email to ${recipients.join(', ')} | Subject: "${subject}"`);
+      // Provider acceptance is not delivery; never log recipient PII or API secrets.
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
+          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
         },
         body: JSON.stringify({
           from,
@@ -92,17 +93,11 @@ export async function sendEmail({
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const errorMsg = data.message || `HTTP ${res.status}: ${res.statusText}`;
-        console.error(`[EMAIL_ERROR:RESEND] API rejected dispatch to ${recipients.join(', ')}:`, errorMsg);
-        return { success: false, provider: 'resend', error: errorMsg };
+        return { success: false, status: 'failed', provider: 'resend', error: `Resend HTTP ${res.status}` };
       }
-
-      const messageId = data.id || `resend_${Date.now()}`;
-      console.log(`[EMAIL_SUCCESS:RESEND] Successfully sent email to ${recipients.join(', ')}. ID: ${messageId}`);
-      return { success: true, provider: 'resend', messageId };
-    } catch (err: any) {
-      console.error(`[EMAIL_ERROR:RESEND] Network or execution failure:`, err.message);
-      return { success: false, provider: 'resend', error: err.message };
+      return { success: true, status: 'accepted', provider: 'resend', messageId: data.id };
+    } catch {
+      return { success: false, status: 'failed', provider: 'resend', error: 'Resend request failed' };
     }
   }
 
@@ -120,82 +115,42 @@ export async function sendEmail({
         },
       });
 
-      console.log(`[EMAIL_DISPATCH:SMTP] Sending email via ${process.env.SMTP_HOST} to ${recipients.join(', ')}`);
+      // A relay Message-ID is not an exactly-once guarantee after a crash.
       const info = await transporter.sendMail({
         from: status.fromEmail,
         to: recipients,
         subject,
         html,
         text,
+        ...(idempotencyKey ? { messageId: `<${idempotencyKey}@chunkstest.ai.studio>` } : {}),
       });
 
-      const messageId = info.messageId || `smtp_${Date.now()}`;
-      console.log(`[EMAIL_SUCCESS:SMTP] Sent successfully to ${recipients.join(', ')}. Message ID: ${messageId}`);
-      return { success: true, provider: 'smtp', messageId };
-    } catch (err: any) {
-      console.error(`[EMAIL_ERROR:SMTP] Failed to send email via SMTP to ${recipients.join(', ')}:`, err);
-      return { success: false, provider: 'smtp', error: err.message };
+      return { success: true, status: 'accepted', provider: 'smtp', messageId: info.messageId };
+    } catch {
+      return { success: false, status: 'failed', provider: 'smtp', error: 'SMTP request failed' };
     }
   }
 
   // 3. Fallback: Missing Environment Variables
-  console.warn(
-    `[EMAIL_ERROR] Missing API Key: Neither RESEND_API_KEY nor SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) are set in .env. ` +
-    `Email to ${recipients.join(', ')} ("${subject}") was logged but cannot be delivered over the network. ` +
-    `Please set RESEND_API_KEY in .env for production email delivery.`
-  );
-
   return {
     success: false,
+    status: 'failed',
     provider: 'none',
-    error: 'MISSING_API_KEY: Please configure RESEND_API_KEY or SMTP credentials in .env',
+    error: 'Email provider not configured with a verified sender',
   };
 }
 
-/**
- * Sends branded confirmation email to Candidate upon 1-on-1 booking
- */
-export async function sendCandidateConfirmationEmail(candidate: Candidate): Promise<EmailDispatchResult> {
-  try {
-    const emailData: CandidateEmailData = {
-      candidateId: candidate.id || 'N/A',
-      fullName: candidate.fullName,
-      phone: candidate.phone,
-      email: candidate.email,
-      testType: candidate.testType,
-      testLevel: candidate.testLevel,
-      preferredSlots: candidate.preferredSlots,
-      chunkerCode: candidate.chunkerCode,
-      chunkerName: candidate.chunkerName,
-      createdAt: candidate.createdAt,
-    };
-
-    const { subject, html, text } = generateCandidateEmailContent(emailData);
-    return await sendEmail({
-      to: candidate.email,
-      subject,
-      html,
-      text,
-    });
-  } catch (error: any) {
-    console.error(`[EMAIL_ERROR] Failed generating/sending candidate confirmation for ${candidate.email}:`, error);
-    return {
-      success: false,
-      provider: 'none',
-      error: error.message,
-    };
-  }
-}
 
 /**
  * Sends immediate notification email to Admin team when a new candidate registers
  */
 export async function sendAdminNewCandidateNotification(
   candidate: Candidate,
-  adminEmails: string[]
+  adminEmails: string[],
+  idempotencyKey?: string
 ): Promise<EmailDispatchResult> {
   if (!adminEmails || adminEmails.length === 0) {
-    return { success: false, provider: 'none', error: 'No admin emails configured' };
+    return { success: false, status: 'failed', provider: 'none', error: 'No admin emails configured' };
   }
 
   try {
@@ -217,13 +172,13 @@ export async function sendAdminNewCandidateNotification(
         </h2>
 
         <div style="background: #fafafa; padding: 16px; border: 1px solid #f4f4f5; margin-bottom: 20px; font-size: 13.5px; line-height: 1.6;">
-          <p style="margin: 0 0 8px 0;"><strong>Họ và tên:</strong> ${candidate.fullName}</p>
-          <p style="margin: 0 0 8px 0;"><strong>Số điện thoại:</strong> ${candidate.phone}</p>
-          <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${candidate.email}</p>
-          <p style="margin: 0 0 8px 0;"><strong>Nghề nghiệp:</strong> ${candidate.occupation} (${candidate.ageRange})</p>
+          <p style="margin: 0 0 8px 0;"><strong>Họ và tên:</strong> ${escapeHtml(candidate.fullName)}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Số điện thoại:</strong> ${escapeHtml(candidate.phone)}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${escapeHtml(candidate.email)}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Nghề nghiệp:</strong> ${escapeHtml(candidate.occupation)} (${escapeHtml(candidate.ageRange)})</p>
           <p style="margin: 0 0 8px 0;"><strong>Bài test:</strong> <span style="color: ${candidate.testType === 'green' ? '#047857' : '#c81e16'}; font-weight: 700;">${testName}</span> (Level: ${levelName})</p>
-          <p style="margin: 0 0 8px 0;"><strong>Khung giờ chọn:</strong> <strong>${candidate.preferredSlots}</strong></p>
-          <p style="margin: 0;"><strong>Mã giới thiệu:</strong> <span style="font-family: monospace; font-weight: 700;">${candidate.chunkerCode}</span> (${candidate.chunkerName || 'Direct Pilot'})</p>
+          <p style="margin: 0 0 8px 0;"><strong>Khung giờ chọn:</strong> <strong>${escapeHtml(candidate.preferredSlots)}</strong></p>
+          <p style="margin: 0;"><strong>Mã giới thiệu:</strong> <span style="font-family: monospace; font-weight: 700;">${escapeHtml(candidate.chunkerCode)}</span> (${escapeHtml(candidate.chunkerName || 'Pilot allocation')})</p>
         </div>
 
         <p style="font-size: 13px; color: #52525b; margin: 0 0 16px 0;">
@@ -231,7 +186,7 @@ export async function sendAdminNewCandidateNotification(
         </p>
 
         <div style="font-size: 11px; color: #a1a1aa; border-top: 1px solid #f4f4f5; padding-top: 12px; font-family: monospace;">
-          Candidate ID: ${candidate.id} · Timestamp: ${candidate.createdAt}
+          Candidate ID: ${escapeHtml(candidate.id)} · Timestamp: ${escapeHtml(candidate.createdAt)}
         </div>
       </div>
     `;
@@ -253,9 +208,9 @@ export async function sendAdminNewCandidateNotification(
       subject,
       html,
       text,
+      idempotencyKey,
     });
-  } catch (error: any) {
-    console.error('[EMAIL_ERROR] Failed sending admin new candidate alert:', error);
-    return { success: false, provider: 'none', error: error.message };
+  } catch {
+    return { success: false, status: 'failed', provider: 'none', error: 'Admin email composition failed' };
   }
 }

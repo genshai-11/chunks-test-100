@@ -1,11 +1,6 @@
-import {
-  CandidateRegisterInput,
-  MaskedCandidateForChunker,
-} from '../schemas/validation';
+import { CandidateRegisterInput } from '../schemas/validation';
 import { Candidate, Chunker, CandidateStatus } from '../types';
-import { sanitizeCandidateForChunker } from '../utils/masking';
-import { INITIAL_CHUNKERS, INITIAL_CANDIDATES } from '../constants/initialData';
-import { buildReferralUrl } from '../utils/referral';
+import { auth } from '../firebase/config';
 
 // Public API response
 export interface ReferralValidationResponse {
@@ -20,16 +15,6 @@ export interface CandidateRegistrationResponse {
   message: string;
 }
 
-export interface ChunkerStatsResponse {
-  chunkerName: string;
-  referralLink: string;
-  totalReferred: number;
-  breakdown: {
-    greenTest: number;
-    redTest: number;
-  };
-  candidates: MaskedCandidateForChunker[];
-}
 
 export interface AdminMetricsResponse {
   target: number;
@@ -58,25 +43,9 @@ export interface AdminCandidatesResponse {
 
 export async function apiValidateReferral(code: string): Promise<ReferralValidationResponse> {
   const cleanCode = encodeURIComponent(code.trim().toUpperCase());
-  try {
-    const res = await fetch(`/api/public/referral?code=${cleanCode}`);
-    if (res.ok) {
-      return await res.json();
-    }
-  } catch (err) {
-    console.warn('API referral fetch error, using safe client resolution:', err);
-  }
-
-  // Graceful client fallback with ZERO data leak
-  const fallbackMatch = INITIAL_CHUNKERS.find(
-    (c) => c.code.toUpperCase() === code.trim().toUpperCase() && c.active
-  );
-
-  return {
-    valid: !!fallbackMatch,
-    chunkerName: fallbackMatch ? fallbackMatch.name : null,
-    referralCode: code.trim().toUpperCase(),
-  };
+  const res = await fetch(`/api/public/referral?code=${cleanCode}`);
+  if (!res.ok) throw new Error('Could not validate referral');
+  return await res.json();
 }
 
 export async function apiRegisterCandidate(
@@ -115,119 +84,26 @@ export async function apiGetHealth(): Promise<{
   return await res.json();
 }
 
-// ----------------------------------------------------------------------
-// Group B: Chunkee Scoped APIs
-// ----------------------------------------------------------------------
-
-export interface ChunkerLookupResponse {
-  found: boolean;
-  notFound?: boolean;
-  chunkerName: string;
-  code: string;
-  email: string;
-  phone?: string;
-  referralLink: string;
-  totalReferred: number;
-  breakdown: {
-    greenTest: number;
-    redTest: number;
-  };
-  candidates?: MaskedCandidateForChunker[];
-  error?: string;
-  message?: string;
-}
-
-export type ChunkeeLookupResponse = ChunkerLookupResponse;
-
-export interface ChunkeeRegisterInput {
-  fullName: string;
-  email: string;
-  phone: string;
-  customCode?: string;
-}
-
-export class ChunkeeNotFoundError extends Error {
-  notFound: boolean;
-  constructor(message: string) {
-    super(message);
-    this.name = 'ChunkeeNotFoundError';
-    this.notFound = true;
-  }
-}
-
-export async function apiLookupChunker(identifier: string): Promise<ChunkerLookupResponse> {
-  const clean = identifier.trim();
-  const res = await fetch(`/api/chunkee/lookup?query=${encodeURIComponent(clean)}`);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    if (res.status === 404 || err.notFound) {
-      throw new ChunkeeNotFoundError(
-        err.message ||
-          'Chunkee chưa có thông tin trong hệ thống. Vui lòng nhập họ tên, email và số điện thoại để lấy link giới thiệu.'
-      );
-    }
-    throw new Error(err.error || err.message || 'Không tìm thấy thông tin Chunkee');
-  }
-  const data = await res.json();
-  if (data && data.code) {
-    data.referralLink = buildReferralUrl(data.code, undefined, data.referralLink);
-  }
-  return data;
-}
-
-export const apiLookupChunkee = apiLookupChunker;
-
-export async function apiRegisterChunkee(input: ChunkeeRegisterInput): Promise<ChunkerLookupResponse> {
-  const res = await fetch('/api/chunkee/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || 'Đăng ký Chunkee không thành công');
-  }
-  if (data && data.code) {
-    data.referralLink = buildReferralUrl(data.code, undefined, data.referralLink);
-  }
-  return data;
-}
-
-export async function apiGetChunkerStats(
-  code: string,
-  token: string
-): Promise<ChunkerStatsResponse> {
-  const cleanCode = encodeURIComponent(code.trim().toUpperCase());
-  const cleanToken = encodeURIComponent(token.trim());
-
-  const res = await fetch(`/api/chunker/stats?code=${cleanCode}&token=${cleanToken}`);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed to fetch chunker referral stats');
-  }
-
-  const data = await res.json();
-  if (data) {
-    data.referralLink = buildReferralUrl(code, undefined, data.referralLink);
-  }
-  return data;
-}
 
 // ----------------------------------------------------------------------
 // Group C: Protected Admin APIs
 // ----------------------------------------------------------------------
 
-function getAdminHeaders(adminEmail: string) {
+async function getAdminHeaders(_adminEmail: string) {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('Sign in to access administrative resources.');
+  }
+
   return {
     'Content-Type': 'application/json',
-    'x-admin-email': adminEmail.toLowerCase().trim(),
-    Authorization: `Bearer admin:${adminEmail.toLowerCase().trim()}`,
+    Authorization: `Bearer ${await user.getIdToken()}`,
   };
 }
 
 export async function apiGetAdminMetrics(adminEmail: string): Promise<AdminMetricsResponse> {
   const res = await fetch('/api/admin/metrics', {
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
   });
 
   if (res.status === 403) {
@@ -260,7 +136,7 @@ export async function apiGetAdminCandidates(
   });
 
   const res = await fetch(`/api/admin/candidates?${queryParams.toString()}`, {
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
     cache: 'no-store',
   });
 
@@ -283,7 +159,7 @@ export async function apiUpdateCandidateStatus(
 ): Promise<{ success: boolean; candidate: Candidate }> {
   const res = await fetch(`/api/admin/candidates/${candidateId}/status`, {
     method: 'PATCH',
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
     body: JSON.stringify({
       status: status.toUpperCase(),
       notes,
@@ -307,13 +183,12 @@ export async function apiCreateChunker(
     fullName: string;
     email: string;
     code: string;
-    secretToken?: string;
     notes?: string;
   }
 ): Promise<{ success: boolean; chunker: Chunker }> {
   const res = await fetch('/api/admin/chunkers', {
     method: 'POST',
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
     body: JSON.stringify(data),
   });
 
@@ -333,7 +208,7 @@ export async function apiGetAdminChunkers(
   adminEmail: string
 ): Promise<{ chunkers: Chunker[] }> {
   const res = await fetch('/api/admin/chunkers', {
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
   });
 
   if (res.status === 403) {
@@ -373,7 +248,7 @@ export async function apiGetNotificationSettings(
   adminEmail: string
 ): Promise<AdminNotificationSettingsResponse> {
   const res = await fetch('/api/admin/settings/notifications', {
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
   });
 
   if (res.status === 403) {
@@ -396,7 +271,7 @@ export async function apiSaveNotificationSettings(
 ): Promise<{ success: boolean; message: string; settings: any }> {
   const res = await fetch('/api/admin/settings/notifications', {
     method: 'POST',
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
     body: JSON.stringify(settings),
   });
 
@@ -417,7 +292,7 @@ export async function apiSendTestNotification(
 ): Promise<{ success: boolean; message: string; testLog: any }> {
   const res = await fetch('/api/admin/notifications/test', {
     method: 'POST',
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
   });
 
   if (res.status === 403) {
@@ -438,7 +313,7 @@ export async function apiResendConfirmationEmail(
 ): Promise<{ success: boolean; message: string; candidate: any }> {
   const res = await fetch(`/api/admin/candidates/${candidateId}/resend-confirmation`, {
     method: 'POST',
-    headers: getAdminHeaders(adminEmail),
+    headers: await getAdminHeaders(adminEmail),
   });
 
   if (res.status === 403) {
@@ -453,27 +328,3 @@ export async function apiResendConfirmationEmail(
   return await res.json();
 }
 
-export async function apiGetCandidateEmailPreview(params: {
-  testType: 'green' | 'red';
-  testLevel: 'easy' | 'hard';
-  fullName?: string;
-  phone?: string;
-  email?: string;
-  preferredSlots?: string;
-}): Promise<{ subject: string; html: string; text: string }> {
-  const query = new URLSearchParams({
-    testType: params.testType,
-    testLevel: params.testLevel,
-    fullName: params.fullName || 'Nguyễn Văn A',
-    phone: params.phone || '0987 654 321',
-    email: params.email || 'nguyen.vana@example.com',
-    preferredSlots: params.preferredSlots || 'Tối ngày trong tuần (19:00 - 21:00)',
-    format: 'json',
-  });
-
-  const res = await fetch(`/api/public/confirmation-email-preview?${query.toString()}`);
-  if (!res.ok) {
-    throw new Error('Failed to load email preview');
-  }
-  return await res.json();
-}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SwissGlyph } from './specimen/SwissGlyph';
+import { SwissGlyph } from './SwissGlyph';
 
 interface ChunksFaqItem {
   number: string;
@@ -24,54 +24,54 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
     questionVi: 'Green Test (%c Focus Test) đo lường điều gì qua 49 thử thách?',
     questionEn: 'What does the Green Test (%c Focus Test) measure across 49 challenges?',
     answerVi:
-      'Green Test kiểm tra năng lực chú ý và duy trì cấu trúc ngữ pháp trước các yêu cầu phi tập quán (anti-habitual pressure). Bài kiểm tra đánh giá liệu bạn có thể xóa bỏ thói quen phát âm sai ngay sau đúng 1 lần sửa của CiC và giảm thiểu chỉ số quên yêu cầu (%RFC) hay không.',
+      'Green Test quan sát cách bạn giữ sự chú ý, phối hợp Chuyển động–Âm thanh–Cảm xúc (MSE) và tiếp tục thực hiện yêu cầu sau khi CiC sửa lỗi. Các lỗi lặp lại, chậm phản hồi hoặc quên yêu cầu được ghi nhận trong %RFC, qua đó ảnh hưởng đến chỉ số tập trung %c.',
     answerEn:
-      'The Green Test measures sustained attention and grammar preservation under anti-habitual pressure. It assesses whether you can instantly eliminate pronunciation and habit errors after a single correction by the CiC while reducing the Requests Forgotten Coefficient (%RFC).',
+      'The Green Test observes how you maintain attention and Motion–Sound–Emotion (MSE) coordination after the CiC corrects a mistake. Repeated errors, delays and missed requests contribute to %RFC and affect the focus score %c.',
   },
   {
     number: '03',
     questionVi: 'Red Test (%r Improvisation Test) kiểm tra sự linh hoạt tư duy ra sao?',
     questionEn: 'How does the Red Test (%r Improvisation Test) test cognitive agility?',
     answerVi:
-      'Red Test tập trung vào ý định và sự nhanh nhạy nhận thức. Bạn sẽ chuyển hướng một ý tưởng đang diễn đạt theo các gợi ý logic ngẫu nhiên từ CiC mà vẫn giữ mạch lập luận chặt chẽ. Trả lời theo văn mẫu là điều bất khả thi, vì sự hiện diện và tính mạch lạc là trọng tâm.',
+      'Red Test quan sát khả năng chuyển hướng một ý tưởng theo các gợi ý ngôn ngữ xuất hiện bất ngờ mà vẫn giữ logic theo đúng thứ tự. Người tham gia cần kết nối các gợi ý ngay trong lúc nói; ngữ pháp hoàn hảo không phải trọng tâm.',
     answerEn:
-      'The Red Test focuses on intention and real-time cognitive agility. You redirect an unfolding idea under sudden, random linguistic hints while preserving sequential logic. Memorized answers are impossible because presence and coherence matter most.',
+      'The Red Test observes how you redirect an unfolding idea as unexpected language hints arrive while preserving their sequence and logic. You connect the hints while speaking; perfect grammar is not the main focus.',
   },
   {
     number: '04',
     questionVi: 'Nguyên lý Motion, Sound, Emotion (MSE) hoạt động như thế nào?',
     questionEn: 'How does the Motion, Sound, Emotion (MSE) resonance principle work?',
     answerVi:
-      'MSE là hệ quy chiếu của CHUNKS Theory MN107.v2.1. Ngôn ngữ chỉ được ghi nhớ sâu khi kết hợp đồng bộ giữa cử động cơ thể (Motion), trường âm thanh phát ra (Sound) và trạng thái cảm xúc thực (Emotion). CiC sẽ quan sát độ cộng hưởng MSE này xuyên suốt 7 cấp độ.',
+      'Theo CHUNKS Theory MN107.v2.1, MSE là sự phối hợp giữa Chuyển động (Motion), Âm thanh (Sound) và Cảm xúc/ý tưởng (Emotion/idea). CiC quan sát sự phối hợp này trong thử thách; lý thuyết không bảo đảm rằng một lần đánh giá sẽ thay đổi thói quen ngôn ngữ.',
     answerEn:
-      'MSE is the foundational framework of CHUNKS Theory MN107.v2.1. Language is permanently anchored only when body motion, vocal sound projection, and genuine emotional resonance align. The CiC observes MSE resonance across all 7 progressive levels.',
+      'In CHUNKS Theory MN107.v2.1, MSE combines Motion, Sound and Emotion/idea. The CiC observes their coordination during challenges; one assessment does not guarantee a change in language habits.',
   },
   {
     number: '05',
-    questionVi: 'Tại sao chiến dịch chỉ mở đúng 100 suất đăng ký qua lời mời?',
-    questionEn: 'Why is this campaign strictly capped at 100 seats via referral?',
+    questionVi: 'Mục tiêu 100 lượt đăng ký của chương trình là gì?',
+    questionEn: 'What does the pilot target of 100 registrations mean?',
     answerVi:
-      'Để đảm bảo chất lượng phản hồi chuyên sâu và tính chính xác của chỉ số pilot, mỗi ứng viên đều được kèm cặp trực tiếp bởi các CiC kỳ cựu. Hệ thống giới thiệu qua mã Chunkee đảm bảo các ứng viên tham gia đều có cam kết học tập nghiêm túc.',
+      'CHUNKS đặt mục tiêu tiếp nhận 100 ứng viên đủ điều kiện để điều phối các buổi đánh giá trực tiếp cùng CiC. Đây là mục tiêu của chương trình, không phải số chỗ còn trống đã được hệ thống xác nhận. Mã giới thiệu giúp ghi nhận người giới thiệu.',
     answerEn:
-      'To maintain deep assessment rigor and pilot calibration, each candidate is evaluated individually by senior CiCs. The invite-only referral system via Chunkees ensures candidates arrive with high learning commitment.',
+      'CHUNKS aims to receive 100 qualified candidates for live sessions with a CiC. This is a pilot target, not a verified count of available seats. Referral codes attribute each invitation to its referrer.',
   },
   {
     number: '06',
     questionVi: 'Quy trình xếp lịch 45 phút và chuẩn bị trước buổi test diễn ra thế nào?',
     questionEn: 'How is the 45-minute session scheduled and what preparation is needed?',
     answerVi:
-      'Sau khi gửi form, đội ngũ điều phối sẽ liên hệ qua Zalo hoặc điện thoại trong vòng 24 giờ để chốt khung giờ chính thức. Bạn chỉ cần chuẩn bị một không gian yên tĩnh, tai nghe có micro tốt và tinh thần cởi mở sẵn sàng thử thách.',
+      'Sau khi gửi yêu cầu, đội ngũ điều phối cần liên hệ qua Zalo hoặc điện thoại để xác nhận lịch; khung giờ trên biểu mẫu chỉ là lựa chọn ưu tiên. Bạn có thể chuẩn bị không gian yên tĩnh và tai nghe có micro cho buổi đánh giá.',
     answerEn:
-      'After submitting the form, our operations team will contact you via Zalo or phone within 24 hours to confirm your exact slot. You only need a quiet space, headphones with a clear microphone, and an open mindset.',
+      'After you submit a request, the operations team needs to contact you by Zalo or phone to confirm the appointment; the time in the form is only a preference. You can prepare a quiet space and a headset with a microphone.',
   },
   {
     number: '07',
     questionVi: 'Thông tin cá nhân (SĐT, Email) của tôi được bảo mật thế nào?',
-    questionEn: 'How is my personal contact information and PII protected?',
+    questionEn: 'How is my personal contact information protected?',
     answerVi:
-      'Hệ thống áp dụng chính sách cách ly dữ liệu nghiêm ngặt. Người giới thiệu (Chunkee) chỉ nhìn thấy số lượng và tên rút gọn có che giấu. Số điện thoại và email của bạn chỉ được truy cập duy nhất bởi Admin điều phối để liên hệ xếp lịch.',
+      'CHUNKS dự định chỉ cho phép nhân sự điều phối được xác thực xem số điện thoại và email của ứng viên. Tuy nhiên, hệ thống đang được rà soát bảo mật; vui lòng cân nhắc trước khi gửi thông tin cá nhân cho đến khi việc kiểm tra hoàn tất.',
     answerEn:
-      'The platform enforces strict end-to-end data isolation. The Chunkee who invited you only sees aggregated counts and masked names. Your raw phone number and email are visible exclusively to verified scheduling administrators.',
+      'CHUNKS intends to limit access to candidate phone numbers and email addresses to verified operations staff. Security review is in progress; consider this before submitting personal data until the review is complete.',
   },
 ];
 

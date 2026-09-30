@@ -43,7 +43,9 @@ export const ChunksFooter: React.FC<Props> = ({
             </button>
 
             <p className="max-w-[34ch] text-[13.5px] text-[#0a0a0a]/65 leading-relaxed mt-4 font-normal tracking-[-0.011em]">
-              CHUNKS Theory MN107.v2.1. Đánh giá năng lực thực thi có ý thức dưới áp lực qua Motion, Sound, Emotion. Chương trình pilot 100 suất giới hạn.
+              {lang === 'vi'
+                ? 'Theo CHUNKS Theory MN107.v2.1: đánh giá sự chú ý và ứng biến khi phối hợp Chuyển động, Âm thanh, Cảm xúc. Mục tiêu thử nghiệm: 100 lượt đăng ký đủ điều kiện.'
+                : 'Based on CHUNKS Theory MN107.v2.1: assessing focus and improvisation through Motion, Sound and Emotion. Pilot target: 100 qualified registrations.'}
             </p>
           </div>
 

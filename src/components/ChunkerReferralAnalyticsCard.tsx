@@ -1,36 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart3, TrendingUp, Award, Users, ArrowUpDown } from 'lucide-react';
-import { Chunker, Candidate } from '../types';
+import { Chunker } from '../types';
 
 interface Props {
   chunkers: Chunker[];
-  candidates?: Candidate[];
   lang: 'vi' | 'en';
 }
 
-export const ChunkerReferralAnalyticsCard: React.FC<Props> = ({ chunkers, candidates = [], lang }) => {
+export const ChunkerReferralAnalyticsCard: React.FC<Props> = ({ chunkers, lang }) => {
   const [sortBy, setSortBy] = useState<'count' | 'name'>('count');
   const [filterActiveOnly, setFilterActiveOnly] = useState(false);
 
-  // Compute exact live counts from both chunker.referralCount and candidates roster
+  // Transactional aggregates include all pages of candidates.
   const analyticsData = useMemo(() => {
-    // Tally actual candidate submissions per chunker code
-    const candidateTally: Record<string, number> = {};
-    let directCount = 0;
-
-    candidates.forEach((c) => {
-      const code = (c.chunkerCode || 'DIRECT').toUpperCase();
-      if (code === 'DIRECT') {
-        directCount++;
-      } else {
-        candidateTally[code] = (candidateTally[code] || 0) + 1;
-      }
-    });
-
-    const list = chunkers.map((ch) => {
-      const codeUpper = ch.code.toUpperCase();
-      // Prefer highest reliable count between chunker.referralCount and direct tally
-      const count = Math.max(ch.referralCount || 0, candidateTally[codeUpper] || 0);
+    const directCount = chunkers.find((ch) => ch.code === 'PILOT100')?.referralCount || 0;
+    const list = chunkers.filter((ch) => ch.code !== 'PILOT100').map((ch) => {
+      const count = ch.referralCount || 0;
       return {
         id: ch.id || ch.code,
         name: ch.name,
@@ -41,31 +26,14 @@ export const ChunkerReferralAnalyticsCard: React.FC<Props> = ({ chunkers, candid
       };
     });
 
-    // Also include any referral codes discovered from candidate registrations
-    Object.keys(candidateTally).forEach((codeKey) => {
-      if (!list.some((item) => item.code.toUpperCase() === codeKey)) {
-        list.push({
-          id: `ref_${codeKey}`,
-          name: codeKey,
-          code: codeKey,
-          email: `${codeKey.toLowerCase()}@chunks.network`,
-          count: candidateTally[codeKey],
-          active: true,
-        });
-      }
-    });
-
-    // Total referrals across all chunkers
     const totalChunkerReferrals = list.reduce((sum, item) => sum + item.count, 0);
-    const totalAll = totalChunkerReferrals + directCount;
-
     return {
       list,
       totalChunkerReferrals,
       directCount,
-      totalAll,
+      totalAll: totalChunkerReferrals + directCount,
     };
-  }, [chunkers, candidates]);
+  }, [chunkers]);
 
   // Sorted and filtered list
   const processedList = useMemo(() => {

@@ -18,7 +18,6 @@ import { createCandidateRegistrationSchema } from '../schemas/validation';
 import { BookingCalendar, SlotSelection } from '../components/BookingCalendar';
 import { AssessmentDetailModal } from '../components/AssessmentDetailModal';
 import { BookingSuccessModal } from '../components/BookingSuccessModal';
-import { registerCandidate } from '../firebase/services';
 import { ChunksFeatureBand } from '../components/ChunksFeatureBand';
 import { ChunksNumberedFaq } from '../components/ChunksNumberedFaq';
 import { ChunksCtaBand } from '../components/ChunksCtaBand';
@@ -129,7 +128,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
           ? `${selectedSlot} (${customSlotNote.trim()})`
           : selectedSlot);
 
-    const safeRefCode = referralCode.trim().toUpperCase() || 'DIRECT';
+    const safeRefCode = isCodeValid && referralCode.trim() ? referralCode.trim().toUpperCase() : 'PILOT100';
 
     const candidatePayload = {
       referralCode: safeRefCode,
@@ -185,34 +184,13 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       const response = await apiRegisterCandidate(candidatePayload);
 
       if (response.success) {
-        // Sync chosen 1-on-1 time slot and candidate details directly to Firestore
-        try {
-          await registerCandidate({
-            fullName: fullName.trim(),
-            phone: phone.trim(),
-            email: email.trim(),
-            ageRange,
-            occupation: occupation.trim(),
-            testType,
-            testLevel,
-            preferredSlots: preferredTimeSlotStr,
-            selectedDate: calendarSlot?.dateStr,
-            selectedTimeSlot: calendarSlot?.timeStr,
-            chunkerCode: safeRefCode,
-            chunkerName: inviterName || (safeRefCode === 'DIRECT' ? '' : safeRefCode),
-          });
-          console.log('[FIRESTORE_SYNC] Successfully synced 1-on-1 time slot with Firestore.');
-        } catch (fsErr) {
-          console.warn('[FIRESTORE_SYNC_WARNING] Firestore sync bypassed or offline:', fsErr);
-        }
-
         setConfirmedCandidate({
           id: response.registrationId,
           fullName: fullName.trim(),
           testType,
           testLevel,
           preferredSlots: preferredTimeSlotStr,
-          chunkerName: inviterName || (safeRefCode === 'DIRECT' ? '' : safeRefCode),
+          chunkerName: inviterName || (safeRefCode === 'PILOT100' ? '' : safeRefCode),
           chunkerCode: safeRefCode,
         });
 
@@ -280,8 +258,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
             <p className="max-w-[48ch] text-[16px] md:text-[17px] text-[#0a0a0a]/65 leading-relaxed mt-6 font-normal tracking-[-0.011em]">
               {lang === 'vi'
-                ? 'Đo lường năng lực thực thi dưới áp lực qua Motion, Sound, Emotion (MSE). Đánh giá 1-on-1 trực tiếp trong 45 phút cùng Chunker-in-Charge. Đúng 100 suất đăng ký duy nhất.'
-                : 'Testing conscious performance under pressure via Motion, Sound, Emotion (MSE). An exclusive 45-minute 1-on-1 assessment with a Chunker-in-Charge. Strictly 100 registration seats.'}
+                ? 'Khám phá cách bạn duy trì sự chú ý hoặc ứng biến khi nói dưới áp lực qua Chuyển động, Âm thanh và Cảm xúc (MSE). Buổi đánh giá trực tiếp 1-on-1, 45 phút cùng Chunker-in-Charge. Chương trình thử nghiệm hướng tới 100 lượt đăng ký đủ điều kiện.'
+                : 'Explore how you sustain attention or improvise while speaking under pressure through Motion, Sound and Emotion (MSE). A live, 45-minute 1-on-1 assessment with a Chunker-in-Charge. This pilot aims for 100 qualified registrations.'}
             </p>
 
             {/* Campaign Call-to-Actions in Hero */}
@@ -311,7 +289,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
             {/* Tabular-nums Meta Row */}
             <div className="flex items-center gap-4 mt-8 pt-8 border-t border-[rgba(10,10,10,0.14)] text-[12.5px] font-medium text-[#0a0a0a]/60 tabular-nums">
               <div>
-                <span className="font-bold text-[#0a0a0a]">100</span> {lang === 'vi' ? 'Suất Giới Hạn' : 'Seats Total'}
+                <span className="font-bold text-[#0a0a0a]">100</span> {lang === 'vi' ? 'Mục Tiêu Đăng Ký' : 'Registration Target'}
               </div>
 
               <span className="w-px h-3.5 bg-[rgba(10,10,10,0.15)] shrink-0" aria-hidden="true" />
@@ -385,6 +363,27 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
             </div>
           </div>
         )}
+        {!isCodeValid && (
+          <div className="mb-6 p-4 border border-[rgba(10,10,10,0.14)] bg-slate-50">
+            <label htmlFor="referral-code" className="block text-sm font-medium">
+              {lang === 'vi' ? 'Mã giới thiệu (không bắt buộc)' : 'Referral code (optional)'}
+            </label>
+            <input
+              id="referral-code"
+              value={referralCode}
+              onChange={(event) => setReferralCode(event.target.value)}
+              maxLength={30}
+              className="mt-2 border border-slate-300 p-2"
+            />
+            <p className="mt-2 text-xs text-slate-600">
+              {loadingCode
+                ? (lang === 'vi' ? 'Đang kiểm tra mã…' : 'Checking code…')
+                : (lang === 'vi'
+                    ? 'Không có mã hợp lệ? Đăng ký qua danh sách chờ PILOT100.'
+                    : 'No valid code? Register through the PILOT100 waitlist.')}
+            </p>
+          </div>
+        )}
 
         {/* 12-Column Layout for Form */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-x-10 gap-y-12">
@@ -399,8 +398,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </h2>
               <p className="text-[14.5px] text-[#0a0a0a]/65 font-light leading-relaxed mt-3">
                 {lang === 'vi'
-                  ? 'Đội ngũ điều phối CHUNKS sẽ bảo vệ PII của bạn tuyệt đối. Thông tin liên hệ chỉ dùng để sắp lịch trực tiếp cùng CiC.'
-                  : 'The CHUNKS operations team isolates your PII under strict zero-trust access control. Contact info is only used to schedule your session.'}
+                  ? 'Thông tin liên hệ được thu thập để điều phối buổi đánh giá. Hệ thống đang được rà soát bảo mật; vui lòng cân nhắc trước khi gửi thông tin cá nhân.'
+                  : 'Contact details are collected to arrange your assessment. Security review is in progress; consider this before submitting personal information.'}
               </p>
             </div>
 
@@ -419,12 +418,12 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </div>
               <div>
                 <span className="font-semibold text-[#0a0a0a] block">
-                  {lang === 'vi' ? 'Cam kết bảo mật' : 'Privacy guarantee'}:
+                  {lang === 'vi' ? 'Quyền riêng tư' : 'Privacy'}:
                 </span>
                 <span className="text-[#0a0a0a]/70 font-light">
                   {lang === 'vi'
-                    ? 'Người giới thiệu KHÔNG thể xem số điện thoại hay email của bạn'
-                    : 'Your inviter CANNOT view your phone number or email'}
+                    ? 'Quyền truy cập thông tin ứng viên đang được rà soát trước khi mở rộng chương trình.'
+                    : 'Access to candidate information is being reviewed before expanding the pilot.'}
                 </span>
               </div>
             </div>
@@ -656,8 +655,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
                     <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
                       {lang === 'vi'
-                        ? 'Đo lường năng lực chú ý, giữ cấu trúc ngữ pháp trước áp lực phi tập quán & triệt tiêu lỗi thói quen.'
-                        : 'Tests attention & concentration under anti-habitual pressure. Eliminates habitual speech errors immediately.'}
+                        ? 'Quan sát cách bạn duy trì sự chú ý, làm theo yêu cầu và nhận biết lỗi đã sửa khi nói dưới áp lực.'
+                        : 'Observes how you maintain attention, follow requests and stay aware of corrections while speaking under pressure.'}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between">
@@ -700,8 +699,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
                     <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
                       {lang === 'vi'
-                        ? 'Đo lường ý định và sự nhanh nhạy nhận thức khi bẻ hướng ý tưởng theo gợi ý logic ngẫu nhiên.'
-                        : 'Tests intention & cognitive agility. Redirect an unfolding idea under sudden random hints while remaining coherent.'}
+                        ? 'Quan sát cách bạn chuyển hướng ý tưởng theo gợi ý bất ngờ mà vẫn giữ trình tự và mạch logic.'
+                        : 'Observes how you redirect an idea under unexpected hints while preserving sequence and logic.'}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between">

@@ -25,9 +25,9 @@ export const ChunksFeatureBand: React.FC = () => {
             <span>49 CHALLENGES</span>
           </div>
 
-          {/* Cell 5: LIMITED 100 SLOTS (hidden below lg) */}
+          {/* Cell 5: Pilot registration target (hidden below lg) */}
           <div className="hidden lg:flex py-3.5 px-4 items-center justify-start truncate">
-            <span>100-TESTER PILOT</span>
+            <span>100-REGISTRATION TARGET</span>
           </div>
         </div>
       </div>

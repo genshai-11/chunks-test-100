@@ -21,12 +21,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
-import {
-  signInAdminWithGoogle,
-  signOutAdmin,
-  fetchNotificationSettings,
-  saveNotificationSettings,
-} from '../firebase/services';
+import { signInAdminWithGoogle, signOutAdmin } from '../firebase/services';
 import {
   apiGetAdminMetrics,
   apiGetAdminCandidates,
@@ -49,12 +44,6 @@ interface Props {
   lang: 'vi' | 'en';
 }
 
-const WHITELIST_EMAILS = [
-  'le.ntmkh@gmail.com',
-  'lucy2511kh@gmail.com',
-  'admin@chunks.edu.vn',
-  'operations@chunks.edu.vn',
-];
 
 export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   // Access control
@@ -94,17 +83,14 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   const [newChunkerName, setNewChunkerName] = useState('');
   const [newChunkerCode, setNewChunkerCode] = useState('');
   const [newChunkerEmail, setNewChunkerEmail] = useState('');
-  const [newChunkerSecret, setNewChunkerSecret] = useState('');
   const [newChunkerNotes, setNewChunkerNotes] = useState('');
   const [creatingChunker, setCreatingChunker] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   // Whitelist check
   const activeEmail = currentUser?.email || '';
-  const isWhitelisted =
-    activeEmail &&
-    (WHITELIST_EMAILS.includes(activeEmail.toLowerCase()) ||
-      activeEmail.toLowerCase().endsWith('@chunks.edu.vn'));
+  const isWhitelisted = !!currentUser?.emailVerified &&
+    ['le.ntmkh@gmail.com', 'lucy2511kh@gmail.com'].includes(activeEmail.toLowerCase());
 
   const loadAdminData = async () => {
     if (!isWhitelisted) return;
@@ -120,11 +106,8 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
           status: statusFilter,
           search,
         }),
-        apiGetAdminChunkers(activeEmail).catch(() => ({ chunkers: [] })),
-        apiGetNotificationSettings(activeEmail).catch(async () => {
-          const fallback = await fetchNotificationSettings();
-          return { settings: fallback, recentLogs: [] };
-        }),
+        apiGetAdminChunkers(activeEmail),
+        apiGetNotificationSettings(activeEmail),
       ]);
 
       setMetrics(m);
@@ -182,12 +165,7 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
         enabled: notificationsEnabled,
       });
 
-      // Also persist to Firestore
-      await saveNotificationSettings({
-        notificationEmails: rawList,
-        enabled: notificationsEnabled,
-        updatedBy: activeEmail,
-      });
+
 
       setNotifFeedback({
         type: 'success',
@@ -210,16 +188,13 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
     setTestingNotif(true);
     setNotifFeedback(null);
     try {
-      const res = await apiSendTestNotification(activeEmail);
-      if (res.testLog) {
-        setRecentNotifLogs((prev) => [res.testLog, ...prev.slice(0, 9)]);
-      }
+      await apiSendTestNotification(activeEmail);
       setNotifFeedback({
         type: 'success',
         message:
           lang === 'vi'
-            ? `Đã gửi thông báo thử nghiệm thành công tới: ${notificationEmailsInput}`
-            : `Test notification dispatched successfully to: ${notificationEmailsInput}`,
+            ? `Nhà cung cấp đã nhận thông báo thử tới: ${notificationEmailsInput}; chưa xác nhận thư đã đến hộp thư.`
+            : `Provider accepted the sample for: ${notificationEmailsInput}; inbox delivery is unconfirmed.`,
       });
     } catch (err: any) {
       setNotifFeedback({
@@ -284,7 +259,6 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
         fullName: newChunkerName.trim(),
         code: newChunkerCode.trim().toUpperCase(),
         email: newChunkerEmail.trim(),
-        secretToken: newChunkerSecret.trim() || `SEC-${newChunkerCode.trim().toUpperCase()}`,
         notes: newChunkerNotes.trim(),
       });
       setChunkers((prev) => [res.chunker, ...prev]);
@@ -292,7 +266,6 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
       setNewChunkerName('');
       setNewChunkerCode('');
       setNewChunkerEmail('');
-      setNewChunkerSecret('');
       setNewChunkerNotes('');
     } catch (err: any) {
       alert(`Failed to add Chunker: ${err.message}`);
@@ -505,7 +478,6 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
       {/* Analytics Summary Card: Chunker Referral Distribution Bar Chart */}
       <ChunkerReferralAnalyticsCard
         chunkers={chunkers}
-        candidates={candidates}
         lang={lang}
       />
 
@@ -838,20 +810,16 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
           </div>
         </form>
 
-        {/* Firebase Cloud Function Integration Badge */}
+        {/* Server outbox reports provider acceptance; inbox delivery is not guaranteed. */}
         <div className="p-4 bg-slate-50 border border-[rgba(10,10,10,0.1)] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
           <div>
-            <div className="flex items-center gap-2 font-mono font-semibold text-[#0a0a0a]">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Firebase Cloud Function Trigger:</span>
-              <code className="text-[#c81e16] bg-rose-50 px-1.5 py-0.5 border border-rose-200">
-                onDocumentCreated("candidates/&#123;candidateId&#125;")
-              </code>
+            <div className="font-mono font-semibold text-[#0a0a0a]">
+              {lang === 'vi' ? 'Email qua hàng đợi máy chủ' : 'Server email outbox'}
             </div>
-            <p className="text-[#0a0a0a]/65 text-[12.5px] mt-1 font-light">
+            <p className="text-[#0a0a0a]/65 text-[12.5px] mt-1">
               {lang === 'vi'
-                ? 'Tự động gửi email xác nhận chi tiết về Bài Test (%c hoặc %r), Level (Dễ / Khó), Khung giờ và hướng dẫn chuẩn bị phản xạ MSE tới ứng viên ngay khi đăng ký thành công.'
-                : 'Automated email notification triggered on document creation, confirming candidate test type, level, and MSE guidelines.'}
+                ? 'Đăng ký được ghi trước; email xác nhận và thông báo được gửi lại nếu nhà cung cấp chưa nhận. Trạng thái đã nhận không xác nhận thư đã vào hộp thư.'
+                : 'Registration is stored first. Confirmation and alert emails retry on provider failure; accepted does not mean delivered.'}
             </p>
           </div>
           <button
@@ -876,16 +844,11 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                   key={log.id}
                   className="p-2.5 bg-slate-50 border border-[rgba(10,10,10,0.08)] flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1 font-mono"
                 >
-                  <div>
-                    <span className="font-bold text-[#0a0a0a]">{log.candidateName}</span>
-                    <span className="text-[#0a0a0a]/60 ml-2">
-                      ({log.testType} · Level: <strong className="text-[#c81e16]">{log.testLevel}</strong>)
-                    </span>
-                  </div>
+                  <div className="text-[#0a0a0a]">{log.kind || 'notification'} · {log.status || 'unknown'}</div>
                   <div className="text-[#0a0a0a]/50 text-[11px] flex items-center gap-2">
-                    <span>To: {Array.isArray(log.recipients) ? log.recipients.join(', ') : log.recipient || 'admin'}</span>
+                    <span>To: {Array.isArray(log.recipients) ? log.recipients.join(', ') : 'admin'}</span>
                     <span>·</span>
-                    <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                    <span>{new Date(log.createdAt || log.timestamp).toLocaleTimeString()}</span>
                   </div>
                 </div>
               ))}
@@ -919,7 +882,6 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
               <tr className="border-b border-[rgba(10,10,10,0.14)] text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[#0a0a0a]/50">
                 <th className="py-2.5 pr-4">Chunkee Name</th>
                 <th className="py-2.5 pr-4">Code</th>
-                <th className="py-2.5 pr-4">Secret Token</th>
                 <th className="py-2.5 pr-4">Email</th>
                 <th className="py-2.5 pr-4">Link Giới Thiệu</th>
                 <th className="py-2.5 text-right">Referral Tally</th>
@@ -933,9 +895,6 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                   <tr key={ch.code} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3 pr-4 font-semibold text-[#0a0a0a]">{ch.name}</td>
                     <td className="py-3 pr-4 font-mono font-bold text-[#c81e16]">{ch.code}</td>
-                    <td className="py-3 pr-4 font-mono text-xs text-[#0a0a0a]/60">
-                      {ch.secretToken || `SEC-${ch.code}`}
-                    </td>
                     <td className="py-3 pr-4 text-[#0a0a0a]/70 font-mono text-xs">{ch.email}</td>
                     <td className="py-3 pr-4">
                       <button
@@ -1042,18 +1001,6 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70 mb-1">
-                  Custom Secret Token (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Leave empty for auto SEC-{CODE}"
-                  value={newChunkerSecret}
-                  onChange={(e) => setNewChunkerSecret(e.target.value)}
-                  className="w-full px-3 py-2 border border-[rgba(10,10,10,0.2)] font-mono text-[13.5px] focus:outline-none focus:border-[#c81e16]"
-                />
-              </div>
 
               <div className="pt-2 flex justify-end gap-2">
                 <button
