@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Globe, QrCode, LogOut, ArrowUpRight } from 'lucide-react';
 import { User } from 'firebase/auth';
 
-export type AppView = 'booking' | 'chunker' | 'admin';
+export type AppView = 'booking' | 'chunker' | 'admin' | 'about';
 
 interface Props {
   currentView: AppView;
@@ -90,41 +90,29 @@ export const Navbar: React.FC<Props> = ({
 
         {/* Center: Customer-Facing Campaign Navigation Links (Compact Sleek Segmented Tabs) */}
         {currentView !== 'admin' ? (
-          <nav className="hidden md:flex items-center text-[13px] font-medium gap-8">
+          <nav className="hidden md:flex items-center p-1 bg-slate-100 rounded-full border border-[rgba(10,10,10,0.08)] text-[12.5px] font-medium gap-1">
             <button
               type="button"
-              onClick={() => scrollToSection('booking-form')}
-              className={`transition-colors cursor-pointer ${
-                activeSection === 'booking-form'
-                  ? 'text-[var(--chunks-accent)] font-semibold'
-                  : 'text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)]'
+              onClick={() => onSelectView('booking')}
+              className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
+                currentView === 'booking'
+                  ? 'bg-white text-[#0a0a0a] font-bold shadow-xs'
+                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a]'
               }`}
             >
-              {lang === 'vi' ? 'Đăng ký' : 'Register'}
+              {lang === 'vi' ? 'Đăng Ký Mini-Test' : 'Register 1-on-1'}
             </button>
 
             <button
               type="button"
-              onClick={() => scrollToSection('mse-method')}
-              className={`transition-colors cursor-pointer ${
-                activeSection === 'mse-method'
-                  ? 'text-[var(--chunks-accent)] font-semibold'
-                  : 'text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)]'
+              onClick={() => onSelectView('about')}
+              className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
+                currentView === 'about'
+                  ? 'bg-white text-[#0a0a0a] font-bold shadow-xs'
+                  : 'text-[#0a0a0a]/60 hover:text-[#0a0a0a]'
               }`}
             >
-              {lang === 'vi' ? 'Phương pháp MSE' : 'MSE Method'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => scrollToSection('faq')}
-              className={`transition-colors cursor-pointer ${
-                activeSection === 'faq'
-                  ? 'text-[var(--chunks-accent)] font-semibold'
-                  : 'text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)]'
-              }`}
-            >
-              FAQ
+              {lang === 'vi' ? 'Về CHUNKS Theory' : 'About CHUNKS'}
             </button>
           </nav>
         ) : (

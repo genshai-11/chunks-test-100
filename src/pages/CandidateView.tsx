@@ -215,42 +215,81 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
   return (
     <div className="chunks-main w-full">
-      <section className="chunks-hero" aria-labelledby="main-hero-title">
-        <motion.div initial={reduceMotion ? false : { opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }} className="chunks-shell chunks-reveal-shell">
-          <div className="chunks-hero-grid">
-            <motion.div initial={reduceMotion ? false : { opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="chunks-hero-rail">
-              <span className="chunks-eyebrow flex items-center gap-3"><span className="block w-2.5 h-2.5 bg-[var(--chunks-accent)]" aria-hidden="true" />CHUNKS TEST · Based on CHUNKS Theory</span>
-              <span className="chunks-meta hidden md:block text-[var(--chunks-muted)]">{lang === 'vi' ? <>MINI-TEST<br />TRỰC TIẾP / 1-ON-1</> : <>MINI-TEST<br />IN PERSON / 1-ON-1</>}</span>
-            </motion.div>
-            <div className="chunks-hero-copy">
-              <div className="overflow-hidden">
-                <motion.h1 id="main-hero-title" initial={reduceMotion ? false : { y: '105%' }} animate={{ y: 0 }} transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }} className="chunks-hero-title">
-                  {lang === 'vi' ? <>Khi nói thật,<br /><strong>bạn phản xạ ra sao?</strong></> : <>When you speak,<br /><strong>how do you respond?</strong></>}
-                </motion.h1>
+      {/* 1. Hero Section: 12-Column Grid */}
+      <section className="chunks-hero w-full hairline-b bg-white" aria-labelledby="main-hero-title">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="chunks-shell chunks-reveal-shell grid grid-cols-1 md:grid-cols-12 gap-6 py-[72px] md:py-[120px]"
+        >
+          {/* Left Column (col-span-12 md:col-span-3) */}
+          <div className="col-span-12 md:col-span-3 mb-4 md:mb-0 space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0a0a0a]/60 block">
+              CHUNKS PILOT
+            </span>
+            <span className="text-[12px] font-mono font-bold text-[#c81e16] block">
+              / MN107.V2.1
+            </span>
+          </div>
+
+          {/* Right Column (col-span-12 md:col-span-9) */}
+          <div className="col-span-12 md:col-span-9 space-y-6">
+            <h1 id="main-hero-title" className="text-[clamp(2.5rem,5.5vw,4.5rem)] leading-[0.98] font-bold tracking-tight text-[#0a0a0a] text-balance">
+              {lang === 'vi' ? (
+                <>
+                  Năng lực phản xạ<span className="text-[#c81e16]">,</span> thử thách có ý thức
+                  <span className="text-[#c81e16]">.</span>
+                </>
+              ) : (
+                <>
+                  Conscious performance<span className="text-[#c81e16]">,</span> tested
+                  <span className="text-[#c81e16]">.</span>
+                </>
+              )}
+            </h1>
+
+            <p className="max-w-[50ch] text-[16px] md:text-[17.5px] text-[#0a0a0a]/75 leading-relaxed font-light">
+              {lang === 'vi'
+                ? 'Khám phá cách bạn duy trì sự chú ý hoặc ứng biến khi nói dưới áp lực qua Chuyển động, Âm thanh và Cảm xúc (MSE). Buổi đánh giá trực tiếp 1-on-1, 15-20 phút cùng Chunker-in-Charge. Chương trình thử nghiệm hướng tới 100 lượt đăng ký đủ điều kiện.'
+                : 'Explore how you sustain attention or improvise while speaking under pressure through Motion, Sound and Emotion (MSE). A live, 15-20 minute 1-on-1 assessment with a Chunker-in-Charge. This pilot aims for 100 qualified registrations.'}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                className="bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[14.5px] font-bold rounded-full px-7 py-3.5 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                onClick={scrollToForm}
+              >
+                <span>{lang === 'vi' ? 'Đăng ký đánh giá 1-on-1' : 'Register for 1-on-1'}</span>
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onOpenChunkerHub?.(referralCode)}
+                className="text-[13px] font-medium text-[#0a0a0a] hover:text-[#c81e16] border border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a] bg-white rounded-full px-4 py-3 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <QrCode size={15} className="text-[#c81e16]" />
+                <span>{lang === 'vi' ? 'Dành cho Chunkee: Tự tạo link & mã QR' : 'For Chunkees: Generate Link & QR'}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-6 pt-6 border-t border-[rgba(10,10,10,0.12)] text-[13px] font-mono text-[#0a0a0a]/70 tabular-nums">
+              <div>
+                <strong className="text-[#0a0a0a] text-[16px] font-bold block">100</strong>
+                <span>{lang === 'vi' ? 'Mục Tiêu Đăng Ký' : 'Target Registrations'}</span>
               </div>
-              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.32 }} className="chunks-hero-info">
-                <p>{lang === 'vi' ? 'Một cuộc gặp trực tiếp để quan sát cách bạn duy trì sự chú ý, ứng biến và kết nối ý tưởng khi nói tiếng Anh. Mini-Test 21 câu, 15–20 phút, 1-on-1 cùng Chunker-in-Charge (CiC); không phải bài trắc nghiệm ngữ pháp.' : 'A live conversation to observe how you sustain attention, improvise and connect ideas in spoken English. A 21-question Mini-Test, 15–20 minutes, in person with a Chunker-in-Charge (CiC); not a grammar quiz.'}</p>
-                <div className="chunks-hero-actions">
-                  <motion.button
-                    type="button"
-                    className="chunks-pill cursor-pointer"
-                    whileHover={reduceMotion ? {} : { scale: 1.02 }}
-                    whileTap={reduceMotion ? {} : { scale: 0.98 }}
-                    onClick={scrollToForm}
-                  >
-                    {lang === 'vi' ? 'Đăng ký Mini-Test' : 'Register for the Mini-Test'}{' '}
-                    <ArrowUpRight size={17} aria-hidden="true" />
-                  </motion.button>
-                  <button type="button" onClick={() => onOpenChunkerHub?.(referralCode)} className="text-[13px] text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)] transition-colors flex items-center gap-2 cursor-pointer"><QrCode size={15} />{lang === 'vi' ? 'Chunkee? Link & QR' : 'Chunkee? Link & QR'}</button>
-                </div>
-              </motion.div>
-              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.5 }} className="chunks-hero-figures">
-                {[
-                  ['21', lang === 'vi' ? 'câu ngắn' : 'short questions'],
-                  ['15–20', lang === 'vi' ? 'phút trực tiếp' : 'minutes in person'],
-                  ['100', lang === 'vi' ? 'lượt đăng ký đủ điều kiện tối đa' : 'qualified registrations maximum'],
-                ].map(([number, label]) => <div key={number}><strong>{number}</strong><span>{label}</span></div>)}
-              </motion.div>
+              <div className="w-px h-6 bg-[rgba(10,10,10,0.15)]" />
+              <div>
+                <strong className="text-[#0a0a0a] text-[16px] font-bold block">15 – 20m</strong>
+                <span>{lang === 'vi' ? 'Mini-Test 21 Câu' : '21-Question Mini-Test'}</span>
+              </div>
+              <div className="w-px h-6 bg-[rgba(10,10,10,0.15)]" />
+              <div>
+                <strong className="text-[#c81e16] text-[16px] font-bold block">Offline</strong>
+                <span>{lang === 'vi' ? 'Đánh Giá Trực Tiếp' : 'In-Person 1-on-1'}</span>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -266,10 +305,16 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
       <section id="booking-form" className="scroll-mt-24">
         <div className="chunks-shell">
         {/* Introductory Banner: About CHUNKS & Mini-Test format */}
-        <motion.div initial={reduceMotion ? false : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="chunks-booking-banner mb-8 p-6 sm:p-8 space-y-5">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="chunks-booking-banner mb-8 p-5 sm:p-6 space-y-3.5 bg-slate-50/80 border border-[rgba(10,10,10,0.14)]"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="CHUNKS" className="w-[44px] h-auto block shrink-0" />
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="CHUNKS" className="w-[32px] h-[32px] object-contain shrink-0" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
                 {lang === 'vi' ? 'CHUNKS TEST 100 · BUỔI KHẢO SÁT TRỰC TIẾP' : 'CHUNKS TEST 100 · IN-PERSON ASSESSMENT'}
               </span>
@@ -284,8 +329,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 <span>the-chunks.com</span>
                 <ExternalLink className="w-3 h-3 text-[#c81e16]" />
               </a>
-                   <a
-                     href="https://chunkstheory.com/chunks-theory-2026-7-pages/"
+              <a
+                href="https://chunkstheory.com/chunks-theory-2026-7-pages/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-[rgba(10,10,10,0.15)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors"
@@ -295,26 +340,14 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </a>
             </div>
           </div>
-           <h2 className="text-[22px] sm:text-[28px] font-semibold tracking-tight max-w-[32ch] leading-tight text-[#0a0a0a]">
-             {lang === 'vi' ? 'Không cần học trước. Hãy đến và nói như bạn thường nói.' : 'No need to rehearse. Speak just as you normally do.'}
-           </h2>
-           <div className="text-[14px] sm:text-[14.5px] text-[#0a0a0a]/80 leading-relaxed max-w-3xl space-y-3 font-normal">
-             <p>
-               {lang === 'vi'
-                 ? 'Để nói một câu tiếng Anh trôi chảy ngoài đời thực, tâm trí bạn phải điều phối ba việc cùng lúc: tập trung giữ mạch câu, ứng biến khi tình huống đổi hướng, và tin vào trực giác ngôn ngữ của mình.'
-                 : 'To speak fluent English in real life, your mind must coordinate three things simultaneously: maintaining focus on your train of thought, improvising when situations shift direction, and trusting your linguistic intuition.'}
-             </p>
-             <p className="font-semibold text-[#c81e16]">
-               {lang === 'vi'
-                 ? 'Nhưng khi áp lực tăng dần, mắt xích nào trong bạn sẽ bị đứt gãy trước?'
-                 : 'Yet as pressure mounts, which link within you breaks first?'}
-             </p>
-             <p>
-               {lang === 'vi'
-                 ? 'Mini-Test 21 câu (15–20 phút) cùng Chunker-in-Charge không phải một kỳ thi. Đó là nơi bạn thả lỏng để tự nhìn thấy phản xạ thật của mình khi không còn kịch bản chuẩn bị sẵn.'
-                 : 'The 21-question Mini-Test (15–20 minutes) with a Chunker-in-Charge is not an exam. It is a space to unwind and witness your genuine reflexes when prepared scripts are stripped away.'}
-             </p>
-           </div>
+          <h2 className="text-[20px] sm:text-[24px] font-semibold tracking-tight leading-snug text-[#0a0a0a]">
+            {lang === 'vi' ? 'Không cần học trước. Hãy đến và nói như bạn thường nói.' : 'No need to rehearse. Speak just as you normally do.'}
+          </h2>
+          <p className="text-[13.5px] sm:text-[14px] text-[#0a0a0a]/75 leading-relaxed max-w-3xl font-normal">
+            {lang === 'vi'
+              ? 'Mini-Test 21 câu ngắn (15–20 phút) trực tiếp 1-on-1 cùng Chunker-in-Charge là nơi bạn thả lỏng để tự nhìn thấy phản xạ Thân – Khẩu – Ý (MSE) tự nhiên của mình khi áp lực tăng dần mà không còn kịch bản chuẩn bị sẵn.'
+              : 'A concise 21-question Mini-Test (15–20 min) 1-on-1 with a CiC observing your natural Motion–Sound–Emotion (MSE) speech reflexes when rote scripts are stripped away.'}
+          </p>
         </motion.div>
         {Boolean(referralCode.trim() && isCodeValid && inviterName) && (
           <div className="mb-10 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -650,10 +683,10 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 <div
                   role="radiogroup"
                   aria-label={lang === 'vi' ? 'Mức độ bài test (Độ khó)' : 'Test level (Difficulty)'}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1"
                 >
-                  {/* Card A: Cơ bản (Dễ) */}
-                  <motion.div
+                  {/* Option 1: Cơ bản (Dễ) */}
+                  <div
                     role="radio"
                     aria-checked={testLevel === 'easy'}
                     tabIndex={0}
@@ -668,64 +701,47 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                         clearFieldError('testLevel');
                       }
                     }}
-                    whileHover={reduceMotion ? {} : { y: -2 }}
-                    whileTap={reduceMotion ? {} : { scale: 0.98 }}
-                    transition={{ duration: 0.2 }}
-                    className={`relative p-5 border cursor-pointer select-none transition-all flex flex-col justify-between rounded-[2px] ${
+                    className={`p-4 border cursor-pointer select-none transition-all rounded-[2px] flex flex-col justify-between ${
                       testLevel === 'easy'
-                        ? 'border-[#c81e16] bg-[#fff5f2] ring-2 ring-[#c81e16]/20 shadow-sm'
-                        : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/40 hover:bg-slate-50/50'
+                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a] shadow-xs'
+                        : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/50'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center justify-between gap-2 mb-2">
                         <span
-                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-bold px-2 py-0.5 transition-colors ${
+                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-semibold px-2 py-0.5 rounded-[2px] transition-colors ${
                             testLevel === 'easy'
-                              ? 'bg-[#c81e16] text-white'
-                              : 'bg-slate-100 text-[#0a0a0a]/70'
+                              ? 'bg-[#0a0a0a] text-white'
+                              : 'bg-slate-100 text-[#0a0a0a]/60'
                           }`}
                         >
                           {lang === 'vi' ? 'TIÊU CHUẨN' : 'STANDARD'}
                         </span>
-
-                        {/* Tactile Radio Checkmark */}
                         <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                             testLevel === 'easy'
-                              ? 'border-[#c81e16] bg-[#c81e16]'
-                              : 'border-[rgba(10,10,10,0.28)] bg-white'
+                              ? 'border-[#0a0a0a] bg-[#0a0a0a]'
+                              : 'border-[rgba(10,10,10,0.3)] bg-white'
                           }`}
                         >
-                          {testLevel === 'easy' && (
-                            <div className="w-2 h-2 rounded-full bg-white" />
-                          )}
+                          {testLevel === 'easy' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                         </div>
                       </div>
 
-                      <h3 className="text-[17px] font-bold tracking-tight text-[#0a0a0a]">
-                        {lang === 'vi' ? 'Cơ bản (Dễ)' : 'Basic (Easy)'}
+                      <h3 className="text-[16px] font-bold tracking-tight text-[#0a0a0a]">
+                        {lang === 'vi' ? 'Cơ bản (Foundation)' : 'Foundation (Standard)'}
                       </h3>
-
-                      <p className="text-[13px] text-[#0a0a0a]/75 mt-1.5 leading-relaxed font-normal">
+                      <p className="text-[13px] text-[#0a0a0a]/70 mt-1 font-light leading-relaxed">
                         {lang === 'vi'
-                          ? 'Nhịp độ tiêu chuẩn · Làm quen phản xạ tự nhiên cùng CiC.'
-                          : 'Standard pace · Natural reflex acclimatization with CiC.'}
+                          ? 'Nhịp độ vừa phải · Làm quen và quan sát phản xạ tự nhiên cùng CiC.'
+                          : 'Moderate pace · Natural reflex acclimatization with CiC.'}
                       </p>
                     </div>
+                  </div>
 
-                    <div className="mt-3.5 pt-3 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] text-[#0a0a0a]/60 font-light flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                      <span>
-                        {lang === 'vi'
-                          ? 'Phù hợp quan sát nhịp phản hồi căn bản.'
-                          : 'Ideal to observe baseline response rhythm.'}
-                      </span>
-                    </div>
-                  </motion.div>
-
-                  {/* Card B: Nâng cao (Khó) */}
-                  <motion.div
+                  {/* Option 2: Nâng cao (Khó) */}
+                  <div
                     role="radio"
                     aria-checked={testLevel === 'hard'}
                     tabIndex={0}
@@ -740,63 +756,45 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                         clearFieldError('testLevel');
                       }
                     }}
-                    whileHover={reduceMotion ? {} : { y: -2 }}
-                    whileTap={reduceMotion ? {} : { scale: 0.98 }}
-                    transition={{ duration: 0.2 }}
-                    className={`relative p-5 border cursor-pointer select-none transition-all flex flex-col justify-between rounded-[2px] ${
+                    className={`p-4 border cursor-pointer select-none transition-all rounded-[2px] flex flex-col justify-between ${
                       testLevel === 'hard'
-                        ? 'border-[#c81e16] bg-[#fff5f2] ring-2 ring-[#c81e16]/20 shadow-sm'
-                        : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/40 hover:bg-rose-50/20'
+                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a] shadow-xs'
+                        : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/50'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center justify-between gap-2 mb-2">
                         <span
-                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-bold px-2 py-0.5 transition-colors ${
+                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-semibold px-2 py-0.5 rounded-[2px] transition-colors ${
                             testLevel === 'hard'
                               ? 'bg-[#c81e16] text-white'
-                              : 'bg-rose-100/70 text-[#c81e16]'
+                              : 'bg-rose-50 text-[#c81e16]'
                           }`}
                         >
-                          {lang === 'vi' ? 'DỒN DẬP' : 'INTENSIVE'}
+                          {lang === 'vi' ? 'ÁP LỰC CAO' : 'INTENSIVE'}
                         </span>
-
-                        {/* Tactile Radio Checkmark */}
                         <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                             testLevel === 'hard'
                               ? 'border-[#c81e16] bg-[#c81e16]'
-                              : 'border-[rgba(10,10,10,0.28)] bg-white'
+                              : 'border-[rgba(10,10,10,0.3)] bg-white'
                           }`}
                         >
-                          {testLevel === 'hard' && (
-                            <div className="w-2 h-2 rounded-full bg-white" />
-                          )}
+                          {testLevel === 'hard' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                         </div>
                       </div>
 
-                      <h3 className="text-[17px] font-bold tracking-tight text-[#0a0a0a]">
-                        {lang === 'vi' ? 'Nâng cao (Khó)' : 'Advanced (Hard)'}
+                      <h3 className="text-[16px] font-bold tracking-tight text-[#0a0a0a]">
+                        {lang === 'vi' ? 'Thử thách (Advanced)' : 'Advanced (Intensive)'}
                       </h3>
-
-                      <p className="text-[13px] text-[#0a0a0a]/75 mt-1.5 leading-relaxed font-normal">
+                      <p className="text-[13px] text-[#0a0a0a]/70 mt-1 font-light leading-relaxed">
                         {lang === 'vi'
-                          ? 'Nhịp độ dồn dập · Tăng ma sát phản xạ dưới áp lực cao.'
+                          ? 'Nhịp độ dồn dập · Tăng tốc độ và ma sát phản xạ dưới áp lực cao.'
                           : 'Rapid pace · Heightened reflex friction under elevated pressure.'}
                       </p>
                     </div>
-
-                    <div className="mt-3.5 pt-3 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] text-[#0a0a0a]/60 font-light flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#c81e16] shrink-0" />
-                      <span>
-                        {lang === 'vi'
-                          ? 'Thử thách ứng biến khi CiC tăng tốc nhịp trao đổi.'
-                          : 'Challenges improvisation when CiC increases pacing.'}
-                      </span>
-                    </div>
-                  </motion.div>
+                  </div>
                 </div>
-
                 {fieldErrors.testLevel && (
                   <p className="text-[12px] text-[#c81e16] mt-1 flex items-center gap-1 font-mono">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />

@@ -8,6 +8,7 @@ import { Navbar, AppView } from './components/Navbar';
 import { CandidateView } from './pages/CandidateView';
 import { ChunkerScopedView } from './pages/ChunkerScopedView';
 import { AdminView } from './pages/AdminView';
+import { AboutChunksView } from './pages/AboutChunksView';
 import { ChunksFooter } from './components/ChunksFooter';
 import { ChunkerHubModal } from './components/ChunkerHubModal';
 import { subscribeToAuth, signOutAdmin } from './firebase/services';
@@ -38,6 +39,8 @@ export default function App() {
 
       if (path === '/admin') {
         setCurrentView('admin');
+      } else if (path === '/about') {
+        setCurrentView('about');
       } else if (path === '/ref-status' || path === '/chunker' || path.startsWith('/c/')) {
         setCurrentView('chunker');
       } else {
@@ -60,6 +63,8 @@ export default function App() {
       } else if (view === 'chunker') {
         url.pathname = '/chunker';
         if (referralCode) url.searchParams.set('code', referralCode);
+      } else if (view === 'about') {
+        url.pathname = '/about';
       } else if (view === 'admin') {
         url.pathname = '/admin';
       }
@@ -129,6 +134,14 @@ export default function App() {
             }}
           />
         )}
+        {/* Route /about : Dedicated About CHUNKS Theory Page */}
+        {currentView === 'about' && (
+          <AboutChunksView
+            lang={lang}
+            onNavigateToBooking={() => handleSelectView('booking')}
+          />
+        )}
+
 
         {/* Route /chunker : Dedicated Chunker Scoped View */}
         {currentView === 'chunker' && (
