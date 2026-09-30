@@ -20,9 +20,9 @@ export const ChunksFeatureBand: React.FC = () => {
             <span>MSE RESONANCE</span>
           </div>
 
-          {/* Cell 4: 49 CHALLENGES */}
+          {/* Cell 4: MINI-TEST 21 CÂU */}
           <div className="py-3.5 px-4 border-r border-white/15 flex items-center justify-start truncate">
-            <span>49 CHALLENGES</span>
+            <span>21 CHALLENGES (MINI-TEST)</span>
           </div>
 
           {/* Cell 5: Pilot registration target (hidden below lg) */}

@@ -12,66 +12,66 @@ interface ChunksFaqItem {
 const CHUNKS_FAQ: ChunksFaqItem[] = [
   {
     number: '01',
-    questionVi: 'Đánh giá 1-on-1 của CHUNKS là gì và khác gì bài test thông thường?',
-    questionEn: 'What is the CHUNKS 1-on-1 assessment and how does it differ from tests?',
+    questionVi: 'Bài Mini-Test 21 câu của CHUNKS là gì và khác gì bài test thông thường?',
+    questionEn: 'What is the CHUNKS 21-question Mini-Test and how does it differ from traditional tests?',
     answerVi:
-      'CHUNKS không phải là bài trắc nghiệm ngữ pháp hay bài kiểm tra lý thuyết tự động. Đây là phiên làm việc trực tiếp 1-on-1 trong 45 phút cùng Chunker-in-Charge (CiC) nhằm đo lường năng lực thực thi có ý thức dưới áp lực thời gian thực qua ba trụ cột Chuyển động, Âm thanh và Cảm xúc (MSE).',
+      'CHUNKS không dùng bài trắc nghiệm lý thuyết hay phần mềm chấm điểm tự động. Đây là bài Mini-Test 21 câu ngắn diễn ra trong 15 – 20 phút trực tiếp (1-on-1) cùng Chunker-in-Charge (CiC) nhằm ghi nhận phản xạ ngôn ngữ thực tế qua ba trụ cột Chuyển động, Âm thanh và Cảm xúc (MSE).',
     answerEn:
-      'CHUNKS is not a generic grammar quiz or automated multiple-choice test. It is an intensive 45-minute 1-on-1 session with a Chunker-in-Charge (CiC) designed to evaluate conscious performance under real-time pressure through Motion, Sound, and Emotion (MSE) resonance.',
+      'CHUNKS is not a multiple-choice quiz or automated app test. It is a concise 21-question Mini-Test conducted in 15–20 minutes 1-on-1 with a Chunker-in-Charge (CiC) to observe real-world speech reflex across Motion, Sound, and Emotion (MSE).',
   },
   {
     number: '02',
-    questionVi: 'Green Test (%c Focus Test) đo lường điều gì qua 49 thử thách?',
-    questionEn: 'What does the Green Test (%c Focus Test) measure across 49 challenges?',
+    questionVi: 'Hình thức kiểm tra diễn ra ở đâu? Có thi online được không?',
+    questionEn: 'Where does the assessment take place? Can it be done online?',
     answerVi:
-      'Green Test quan sát cách bạn giữ sự chú ý, phối hợp Chuyển động–Âm thanh–Cảm xúc (MSE) và tiếp tục thực hiện yêu cầu sau khi CiC sửa lỗi. Các lỗi lặp lại, chậm phản hồi hoặc quên yêu cầu được ghi nhận trong %RFC, qua đó ảnh hưởng đến chỉ số tập trung %c.',
+      'Bài đánh giá được tổ chức trực tiếp (Offline) 1-on-1 tại không gian tiêu chuẩn của CHUNKS. Việc tương tác trực tiếp giúp CiC quan sát toàn diện nhịp thở, độ tự tin và phản xạ cơ thể trong thời gian thực – điều mà các ứng dụng trực tuyến không thể ghi nhận đầy đủ.',
     answerEn:
-      'The Green Test observes how you maintain attention and Motion–Sound–Emotion (MSE) coordination after the CiC corrects a mistake. Repeated errors, delays and missed requests contribute to %RFC and affect the focus score %c.',
+      'The session is conducted strictly in-person (Offline) 1-on-1 at CHUNKS. Direct interaction enables the CiC to observe vocal confidence, posture, and natural speech rhythm in real time, which online tools cannot capture.',
   },
   {
     number: '03',
-    questionVi: 'Red Test (%r Improvisation Test) kiểm tra sự linh hoạt tư duy ra sao?',
-    questionEn: 'How does the Red Test (%r Improvisation Test) test cognitive agility?',
+    questionVi: '21 câu hỏi trong 15–20 phút khảo sát những yếu tố nào?',
+    questionEn: 'What do the 21 challenges in 15–20 minutes evaluate?',
     answerVi:
-      'Red Test quan sát khả năng chuyển hướng một ý tưởng theo các gợi ý ngôn ngữ xuất hiện bất ngờ mà vẫn giữ logic theo đúng thứ tự. Người tham gia cần kết nối các gợi ý ngay trong lúc nói; ngữ pháp hoàn hảo không phải trọng tâm.',
+      'Bài test khảo sát 2 nhánh phản xạ chính: Khả năng duy trì sự tập trung (%c Focus — giữ vững câu từ và phản hồi tự tin sau khi được gợi ý) và Khả năng ứng biến linh hoạt (%r Improv — bẻ lái ý tưởng mượt mà khi nhận các ngữ cảnh bất ngờ mà vẫn giữ mạch logic).',
     answerEn:
-      'The Red Test observes how you redirect an unfolding idea as unexpected language hints arrive while preserving their sequence and logic. You connect the hints while speaking; perfect grammar is not the main focus.',
+      'The 21 challenges evaluate two key dimensions: Focus reflex (%c — staying composed and maintaining narrative rhythm after corrections) and Agile improvisation (%r — smoothly redirecting an idea when faced with unexpected cues while preserving logic).',
   },
   {
     number: '04',
-    questionVi: 'Nguyên lý Motion, Sound, Emotion (MSE) hoạt động như thế nào?',
-    questionEn: 'How does the Motion, Sound, Emotion (MSE) resonance principle work?',
+    questionVi: 'Khung giờ chọn trên biểu mẫu (Calendar) có phải là giờ chốt chính thức?',
+    questionEn: 'Is the time selected on the calendar considered the final confirmed slot?',
     answerVi:
-      'Theo CHUNKS Theory MN107.v2.1, MSE là sự phối hợp giữa Chuyển động (Motion), Âm thanh (Sound) và Cảm xúc/ý tưởng (Emotion/idea). CiC quan sát sự phối hợp này trong thử thách; lý thuyết không bảo đảm rằng một lần đánh giá sẽ thay đổi thói quen ngôn ngữ.',
+      'Khung giờ trên lịch biểu mẫu là thời gian mong muốn dự kiến của bạn. Sau khi tiếp nhận thông tin, điều phối viên CHUNKS sẽ chủ động gọi điện hoặc nhắn tin Zalo để thống nhất lịch hẹn trực tiếp chính thức và gửi hướng dẫn đường đi tới cơ sở.',
     answerEn:
-      'In CHUNKS Theory MN107.v2.1, MSE combines Motion, Sound and Emotion/idea. The CiC observes their coordination during challenges; one assessment does not guarantee a change in language habits.',
+      'The calendar selection records your desired expected window. After receiving your submission, CHUNKS operations will contact you via phone or Zalo to finalize the appointment and provide directions to the location.',
   },
   {
     number: '05',
-    questionVi: 'Mục tiêu 100 lượt đăng ký của chương trình là gì?',
-    questionEn: 'What does the pilot target of 100 registrations mean?',
+    questionVi: 'Tôi có cần ôn tập ngữ pháp hay chuẩn bị kịch bản trước không?',
+    questionEn: 'Do I need to review grammar rules or prepare a script beforehand?',
     answerVi:
-      'CHUNKS đặt mục tiêu tiếp nhận 100 ứng viên đủ điều kiện để điều phối các buổi đánh giá trực tiếp cùng CiC. Đây là mục tiêu của chương trình, không phải số chỗ còn trống đã được hệ thống xác nhận. Mã giới thiệu giúp ghi nhận người giới thiệu.',
+      'Hoàn toàn không cần ôn tập hay học thuộc câu mẫu. Mini-test 21 câu được xây dựng để đo phản xạ tự nhiên của bạn ở thời điểm hiện tại. Trọng tâm là sự linh hoạt và kết nối logic, không chấm điểm ngữ pháp hàn lâm.',
     answerEn:
-      'CHUNKS aims to receive 100 qualified candidates for live sessions with a CiC. This is a pilot target, not a verified count of available seats. Referral codes attribute each invitation to its referrer.',
+      'No prior preparation or rehearsed script is needed. The 21-question mini-test measures your spontaneous reflex in real time. We prioritize agility and communicative flow over textbook grammar.',
   },
   {
     number: '06',
-    questionVi: 'Quy trình xếp lịch 45 phút và chuẩn bị trước buổi test diễn ra thế nào?',
-    questionEn: 'How is the 45-minute session scheduled and what preparation is needed?',
+    questionVi: 'Nếu tôi chưa có mã giới thiệu thì có thể đăng ký giữ chỗ không?',
+    questionEn: 'Can I register if I do not currently have a referral code?',
     answerVi:
-      'Sau khi gửi yêu cầu, đội ngũ điều phối cần liên hệ qua Zalo hoặc điện thoại để xác nhận lịch; khung giờ trên biểu mẫu chỉ là lựa chọn ưu tiên. Bạn có thể chuẩn bị không gian yên tĩnh và tai nghe có micro cho buổi đánh giá.',
+      'Được. Nếu chưa có mã từ Chunkee quen biết, hệ thống sẽ tự động xếp bạn vào danh sách chờ ưu tiên PILOT100. Ngoài ra, nếu bạn là một Chunkee, bạn có thể tự tạo mã giới thiệu cá nhân ngay trên trang chủ để gửi cho bạn bè.',
     answerEn:
-      'After you submit a request, the operations team needs to contact you by Zalo or phone to confirm the appointment; the time in the form is only a preference. You can prepare a quiet space and a headset with a microphone.',
+      'Yes. If you do not have an inviter code, you can register via the priority pilot waitlist (PILOT100). Furthermore, Chunkees can generate their own personal referral link directly from the home page.',
   },
   {
     number: '07',
-    questionVi: 'Thông tin cá nhân (SĐT, Email) của tôi được bảo mật thế nào?',
-    questionEn: 'How is my personal contact information protected?',
+    questionVi: 'Thông tin cá nhân (SĐT, Email) của tôi được bảo vệ như thế nào?',
+    questionEn: 'How are my contact details and diagnostic results protected?',
     answerVi:
-      'CHUNKS dự định chỉ cho phép nhân sự điều phối được xác thực xem số điện thoại và email của ứng viên. Tuy nhiên, hệ thống đang được rà soát bảo mật; vui lòng cân nhắc trước khi gửi thông tin cá nhân cho đến khi việc kiểm tra hoàn tất.',
+      'Thông tin cá nhân được mã hóa và bảo mật nghiêm ngặt trên hệ thống máy chủ, chỉ phục vụ điều phối lịch hẹn và thông báo kết quả 1-on-1 giữa bạn và CiC; CHUNKS cam kết không chia sẻ dữ liệu cho bên thứ ba.',
     answerEn:
-      'CHUNKS intends to limit access to candidate phone numbers and email addresses to verified operations staff. Security review is in progress; consider this before submitting personal data until the review is complete.',
+      'Your personal details are stored securely on our backend, accessed only by verified operations staff to schedule your in-person session; CHUNKS never shares your contact information with third parties.',
   },
 ];
 

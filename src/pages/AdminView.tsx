@@ -85,6 +85,7 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   const [newChunkerEmail, setNewChunkerEmail] = useState('');
   const [newChunkerNotes, setNewChunkerNotes] = useState('');
   const [creatingChunker, setCreatingChunker] = useState(false);
+  const [newChunkerError, setNewChunkerError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   // Whitelist check
@@ -254,21 +255,23 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
     e.preventDefault();
     if (!newChunkerName.trim() || !newChunkerCode.trim() || !newChunkerEmail.trim()) return;
     setCreatingChunker(true);
+    const cleanCode = newChunkerCode.replace(/\s+/g, '').toUpperCase();
+    setNewChunkerError(null);
     try {
       const res = await apiCreateChunker(activeEmail, {
         fullName: newChunkerName.trim(),
-        code: newChunkerCode.trim().toUpperCase(),
+        code: cleanCode,
         email: newChunkerEmail.trim(),
         notes: newChunkerNotes.trim(),
       });
-      setChunkers((prev) => [res.chunker, ...prev]);
+      setChunkers((prev) => [res.chunker, ...prev.filter((c) => c.code !== res.chunker.code)]);
       setShowAddChunker(false);
       setNewChunkerName('');
       setNewChunkerCode('');
       setNewChunkerEmail('');
       setNewChunkerNotes('');
     } catch (err: any) {
-      alert(`Failed to add Chunker: ${err.message}`);
+      setNewChunkerError(err.message || 'Failed to create Chunkee account');
     } finally {
       setCreatingChunker(false);
     }
@@ -958,6 +961,11 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
               </button>
             </div>
 
+            {newChunkerError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 text-[#c81e16] text-xs">
+                {newChunkerError}
+              </div>
+            )}
             <form onSubmit={handleCreateChunker} className="mt-5 space-y-4">
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-[#0a0a0a]/70 mb-1">

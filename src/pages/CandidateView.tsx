@@ -280,8 +280,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 <QrCode className="w-3.5 h-3.5 text-[#c81e16]" />
                 <span>
                   {lang === 'vi'
-                    ? 'Bạn là Chunkee? Lấy link & mã QR giới thiệu'
-                    : 'Are you a Chunkee? Get your link & QR'}
+                    ? 'Dành cho Chunkee: Tự tạo link & mã QR'
+                    : 'For Chunkees: Generate Your Link & QR'}
                 </span>
               </button>
             </div>
@@ -295,13 +295,13 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               <span className="w-px h-3.5 bg-[rgba(10,10,10,0.15)] shrink-0" aria-hidden="true" />
 
               <div>
-                <span className="font-bold text-[#0a0a0a]">45 min</span> {lang === 'vi' ? 'Phiên Đánh Giá' : 'Session'}
+                <span className="font-bold text-[#0a0a0a]">15 – 20m</span> {lang === 'vi' ? 'Mini-Test 21 Câu' : '21-Question Mini-Test'}
               </div>
 
               <span className="w-px h-3.5 bg-[rgba(10,10,10,0.15)] shrink-0" aria-hidden="true" />
 
               <div>
-                <span className="font-bold text-[#0a0a0a]">02</span> {lang === 'vi' ? 'Bài Test Ưu Tiên' : 'Priority Tests'}
+                <span className="font-bold text-[#0a0a0a]">Offline</span> {lang === 'vi' ? 'Đánh Giá Trực Tiếp' : 'In-Person 1-on-1'}
               </div>
             </div>
           </div>
@@ -398,32 +398,36 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </h2>
               <p className="text-[14.5px] text-[#0a0a0a]/65 font-light leading-relaxed mt-3">
                 {lang === 'vi'
-                  ? 'Thông tin liên hệ được thu thập để điều phối buổi đánh giá. Hệ thống đang được rà soát bảo mật; vui lòng cân nhắc trước khi gửi thông tin cá nhân.'
-                  : 'Contact details are collected to arrange your assessment. Security review is in progress; consider this before submitting personal information.'}
+                  ? 'Đăng ký tham gia bài Mini-Test 21 câu ngắn (15 - 20 phút) trực tiếp 1-on-1 cùng chuyên viên CiC để khảo sát phản xạ ngôn ngữ thực tế qua phương pháp MSE.'
+                  : 'Register for the 21-question Mini-Test (15-20 minutes) conducted 1-on-1 in-person with a CiC to assess real speech reflexes via MSE.'}
               </p>
             </div>
 
             <div className="border-t border-[rgba(10,10,10,0.14)] pt-6 space-y-4 text-[13px]">
               <div>
                 <span className="font-semibold text-[#0a0a0a] block">
-                  {lang === 'vi' ? 'Thời lượng chuẩn' : 'Session duration'}:
+                  {lang === 'vi' ? 'Thời lượng' : 'Session duration'}:
                 </span>
-                <span className="text-[#0a0a0a]/70 font-light">45 {lang === 'vi' ? 'phút trực tiếp với CiC' : 'minutes live with CiC'}</span>
+                <span className="text-[#0a0a0a]/70 font-light">
+                  {lang === 'vi' ? '15 – 20 phút (Mini-test 21 câu)' : '15 – 20 minutes (21-question mini-test)'}
+                </span>
               </div>
               <div>
                 <span className="font-semibold text-[#0a0a0a] block">
                   {lang === 'vi' ? 'Hình thức' : 'Format'}:
                 </span>
-                <span className="text-[#0a0a0a]/70 font-light">Online Google Meet / Không gian yên tĩnh</span>
+                <span className="text-[#0a0a0a]/70 font-light">
+                  {lang === 'vi' ? 'Trực tiếp (Offline) 1-on-1 tại CHUNKS' : 'In-person (Offline) 1-on-1 at CHUNKS'}
+                </span>
               </div>
               <div>
                 <span className="font-semibold text-[#0a0a0a] block">
-                  {lang === 'vi' ? 'Quyền riêng tư' : 'Privacy'}:
+                  {lang === 'vi' ? 'Bảo mật & Quyền riêng tư' : 'Privacy'}:
                 </span>
                 <span className="text-[#0a0a0a]/70 font-light">
                   {lang === 'vi'
-                    ? 'Quyền truy cập thông tin ứng viên đang được rà soát trước khi mở rộng chương trình.'
-                    : 'Access to candidate information is being reviewed before expanding the pilot.'}
+                    ? 'Thông tin cá nhân được bảo vệ trên hệ thống máy chủ, chỉ phục vụ duy nhất cho buổi đánh giá của bạn.'
+                    : 'Personal details are stored securely on the backend, strictly used for your session coordination.'}
                 </span>
               </div>
             </div>
@@ -645,18 +649,18 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
                         <span className="text-[14px] font-bold text-[#0a0a0a]">
-                          Green Test (%c)
+                          Mini-Test: Focus (%c)
                         </span>
                       </div>
                       <span className="text-[10px] uppercase font-mono tracking-wider text-[#0a0a0a]/60">
-                        Focus
+                        Offline · 15-20m
                       </span>
                     </div>
 
                     <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
                       {lang === 'vi'
-                        ? 'Quan sát cách bạn duy trì sự chú ý, làm theo yêu cầu và nhận biết lỗi đã sửa khi nói dưới áp lực.'
-                        : 'Observes how you maintain attention, follow requests and stay aware of corrections while speaking under pressure.'}
+                        ? '21 câu hỏi ngắn đo lường độ tập trung phản xạ ngôn ngữ, khả năng duy trì câu từ và bình tĩnh khi được gợi ý trực tiếp.'
+                        : '21 short questions measuring speech reflex, focus durability, and vocal composure during in-person evaluation.'}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between">
@@ -668,10 +672,10 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                         }}
                         className="text-[12px] text-[#c81e16] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                       >
-                        <span>{lang === 'vi' ? '[Đọc chi tiết về Green Test]' : '[Details on Green Test]'}</span>
+                        <span>{lang === 'vi' ? '[Chi tiết Mini-Test Focus]' : '[Focus Mini-Test Details]'}</span>
                       </button>
                       <span className="text-[11px] font-mono tabular-nums text-[#0a0a0a]/50">
-                        45 min · 49 challenges
+                        15-20 min · 21 questions · Offline
                       </span>
                     </div>
                   </div>
@@ -689,18 +693,18 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#ff3b30] shrink-0" />
                         <span className="text-[14px] font-bold text-[#0a0a0a]">
-                          Red Test (%r)
+                          Mini-Test: Improv (%r)
                         </span>
                       </div>
                       <span className="text-[10px] uppercase font-mono tracking-wider text-[#0a0a0a]/60">
-                        Improv
+                        Offline · 15-20m
                       </span>
                     </div>
 
                     <p className="text-[13px] text-[#0a0a0a]/75 font-light leading-relaxed">
                       {lang === 'vi'
-                        ? 'Quan sát cách bạn chuyển hướng ý tưởng theo gợi ý bất ngờ mà vẫn giữ trình tự và mạch logic.'
-                        : 'Observes how you redirect an idea under unexpected hints while preserving sequence and logic.'}
+                        ? '21 câu hỏi ngắn đo lường khả năng ứng biến linh hoạt, tư duy bẻ lái ý tưởng mượt mà khi nhận các gợi ý ngẫu nhiên.'
+                        : '21 short challenges measuring cognitive agility and narrative pivoting when unexpected cues arrive in-person.'}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-[rgba(10,10,10,0.1)] flex items-center justify-between">
@@ -712,10 +716,10 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                         }}
                         className="text-[12px] text-[#c81e16] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                       >
-                        <span>{lang === 'vi' ? '[Đọc chi tiết về Red Test]' : '[Details on Red Test]'}</span>
+                        <span>{lang === 'vi' ? '[Chi tiết Mini-Test Improv]' : '[Improv Mini-Test Details]'}</span>
                       </button>
                       <span className="text-[11px] font-mono tabular-nums text-[#0a0a0a]/50">
-                        45 min · 49 challenges
+                        15-20 min · 21 questions · Offline
                       </span>
                     </div>
                   </div>
@@ -800,8 +804,13 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               {/* 3. Availability Calendar Picker */}
               <div className="space-y-4">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  03. {lang === 'vi' ? 'CHỌN LỊCH VÀ KHUNG GIỜ ĐÁNH GIÁ 1-ON-1' : '1-ON-1 CALENDAR & TIME SLOT SELECTION'}
+                  03. {lang === 'vi' ? 'GHI NHẬN THỜI GIAN MONG MUỐN DỰ KIẾN (LỊCH OFFLINE)' : 'SELECT DESIRED EXPECTED TIME (OFFLINE)'}
                 </span>
+                <p className="text-[12.5px] text-[#0a0a0a]/65 font-light -mt-2">
+                  {lang === 'vi'
+                    ? 'Thời gian bạn chọn là khung giờ dự kiến mong muốn. Điều phối viên CHUNKS sẽ liên hệ xác nhận lịch hẹn chính thức tại cơ sở.'
+                    : 'The selected slot records your preferred window. Operations will contact you to finalize the in-person appointment.'}
+                </p>
 
                 {/* Interactive Monthly/Daily Calendar and Slot Picker */}
                 <BookingCalendar

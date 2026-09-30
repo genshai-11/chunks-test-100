@@ -203,3 +203,16 @@ export const createChunkerSchema = z.object({
   message: 'Either fullName or name must be provided',
   path: ['fullName'],
 });
+
+export const publicRegisterChunkerSchema = z.object({
+  fullName: z.string().trim().min(2, 'Họ và tên cần ít nhất 2 ký tự').max(100),
+  email: z.string().trim().email('Địa chỉ email không hợp lệ').max(120),
+  phone: z.string().trim().optional(),
+  preferredCode: z
+    .string()
+    .trim()
+    .min(3, 'Mã giới thiệu cần ít nhất 3 ký tự')
+    .max(20, 'Mã giới thiệu không vượt quá 20 ký tự')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Mã chỉ được chứa chữ cái, số, gạch dưới (_) hoặc gạch nối (-)')
+    .optional(),
+});

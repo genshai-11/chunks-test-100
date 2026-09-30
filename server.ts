@@ -5,7 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import { OAuth2Client } from 'google-auth-library';
 import {
   referralQuerySchema, candidateRegisterSchema, adminCandidatesQuerySchema,
-  updateCandidateStatusSchema, createChunkerSchema, isValidEmailAddress,
+  updateCandidateStatusSchema, createChunkerSchema, publicRegisterChunkerSchema, isValidEmailAddress,
 } from './src/schemas/validation';
 import { Candidate, CandidateStatus } from './src/types';
 import { dbService, getServerFirestore, RegistrationError } from './src/db/database';
@@ -148,6 +148,48 @@ async function startServer() {
     }
   });
 
+  /**
+   * POST /api/public/chunkee/register-referrer
+   * Purpose: Allow Chunkees on the main landing page to self-register their referral account and get their referral link/QR code.
+   */
+  app.post('/api/public/chunkee/register-referrer', async (req: Request, res: Response) => {
+    const parsed = publicRegisterChunkerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: parsed.error.issues.map((i) => i.message).join('; '),
+      });
+    }
+    const { fullName, email, phone, preferredCode } = parsed.data;
+    const baseCode = (preferredCode || fullName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()) || 'CHUNKEE';
+    let candidateCode = baseCode;
+    const existing = await dbService.getChunkerByCode(candidateCode);
+    if (existing) {
+      if (preferredCode) {
+        return res.status(409).json({ success: false, error: 'Mã giới thiệu này đã có người sử dụng. Vui lòng chọn mã khác.' });
+      }
+      candidateCode = `${baseCode}${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+    try {
+      const chunker = await dbService.createChunker({
+        name: fullName.trim(),
+        code: candidateCode,
+        email: email.trim(),
+        notes: `Tự đăng ký từ trang chủ${phone ? ` · SĐT: ${phone.trim()}` : ''}`,
+      });
+      return res.status(201).json({
+        success: true,
+        chunker: {
+          code: chunker.code,
+          name: chunker.name,
+        },
+      });
+    } catch {
+      return res.status(503).json({ success: false, error: 'Không thể tạo mã giới thiệu lúc này. Vui lòng thử lại sau.' });
+    }
+  });
+
   /** Record one registration, its referral, quota, phone lock, and email jobs atomically. */
   app.post('/api/public/candidates/register', async (req: Request, res: Response) => {
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
@@ -260,7 +302,12 @@ async function startServer() {
 
   app.post('/api/admin/chunkers', adminAuthMiddleware, async (req: Request, res: Response) => {
     const parsed = createChunkerSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid chunker data' });
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Invalid chunker data',
+        details: parsed.error.issues.map((i) => i.message).join('; '),
+      });
+    }
     const data = parsed.data;
     try {
       const chunker = await dbService.createChunker({ name: (data.fullName || data.name)!.trim(), code: data.code, email: data.email, notes: data.notes });

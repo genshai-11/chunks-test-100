@@ -1,0 +1,38 @@
+# Example GitHub Actions Continuous Deployment Workflow
+# Triggered on push to main branch after all checks pass.
+# Requires configuring GCP Workload Identity Federation (WIF).
+# Do NOT store raw service account JSON keys in GitHub Secrets.
+
+name: Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Authenticate with Google Cloud using Workload Identity Federation
+      # - uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: 'projects/781691010426/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+      #     service_account: 'github-deployer@fourth-vehicle-452610-a1.iam.gserviceaccount.com'
+
+      # 2. Build and push container to Google Artifact Registry / Container Registry
+      # - uses: google-github-actions/setup-gcloud@v2
+      # - run: gcloud builds submit --tag gcr.io/fourth-vehicle-452610-a1/remix-chunks-test-100:latest .
+
+      # 3. Deploy new revision to Cloud Run
+      # - run: |
+      #     gcloud run deploy remix-chunks-test-100 \
+      #       --image gcr.io/fourth-vehicle-452610-a1/remix-chunks-test-100:latest \
+      #       --region asia-east1 \
+      #       --project fourth-vehicle-452610-a1

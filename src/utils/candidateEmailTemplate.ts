@@ -146,13 +146,13 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
           <strong>Không cần học vẹt hay chuẩn bị trước kịch bản:</strong> Buổi test áp dụng lý thuyết MSE để đo lường phản xạ tư duy trực tiếp và mức độ tự nhiên của giọng nói. Việc học thuộc lòng mẫu câu sẽ phản tác dụng.
         </li>
         <li style="margin-bottom: 8px;">
-          <strong>Thiết bị & Đường truyền:</strong> Ưu tiên sử dụng máy tính có microphone rõ ràng hoặc tai nghe chuyên dụng. Đảm bảo đường truyền Internet ổn định trong suốt 45 phút.
+          <strong>Hình thức & Thời lượng:</strong> Buổi Mini-test 21 câu diễn ra trực tiếp (Offline) 1-on-1 trong vòng 15 – 20 phút tại không gian tiêu chuẩn của CHUNKS.
         </li>
         <li style="margin-bottom: 8px;">
-          <strong>Không gian yên tĩnh:</strong> Chọn không gian riêng tư, hạn chế tiếng ồn xung quanh để chuyên viên CiC (Chunker-in-Charge) có thể đo đạc trường âm thanh chuẩn xác nhất.
+          <strong>Tâm lý thoải mái:</strong> Giữ tinh thần tự nhiên, không cần chuẩn bị bài trước; chuyên viên CiC sẽ hướng dẫn bạn theo từng nhịp thử thách.
         </li>
         <li>
-          <strong>Liên hệ xác nhận:</strong> Bộ phận điều phối sẽ chủ động gọi điện hoặc nhắn tin Zalo tới số <strong>${escapeHtml(data.phone)}</strong> của bạn trước buổi đánh giá để chốt giờ chính xác và gửi link phòng họp bảo mật.
+          <strong>Liên hệ xác nhận lịch:</strong> Bộ phận điều phối sẽ chủ động gọi điện hoặc nhắn tin Zalo tới số <strong>${escapeHtml(data.phone)}</strong> của bạn để chốt thời gian chính thức và gửi hướng dẫn đường đi tới cơ sở.
         </li>
       </ul>
     </div>
@@ -163,7 +163,7 @@ export function generateCandidateEmailContent(data: CandidateEmailData): {
         CHUNKS Test 100 — Nghiên cứu & Đánh giá năng lực ngôn ngữ theo phương pháp MSE.
       </p>
       <p style="margin: 0; font-family: monospace; font-size: 11px; color: #a1a1aa;">
-        Email này được gửi tự động từ hệ thống Firebase Cloud Functions Trigger. Vui lòng không trả lời trực tiếp email này.
+        Email này được gửi tự động từ hệ thống điều phối CHUNKS Test 100.
       </p>
     </div>
 
@@ -194,9 +194,9 @@ CHI TIẾT ĐĂNG KÝ:
 HƯỚNG DẪN CHUẨN BỊ:
 -------------------
 1. Không cần chuẩn bị kịch bản hay học vẹt mẫu câu. Bài test đo lường phản xạ MSE trực tiếp trong thời gian thực.
-2. Sử dụng tai nghe có microphone rõ nét và kết nối mạng ổn định.
-3. Giữ không gian yên tĩnh trong suốt 45 phút đánh giá.
-4. Chuyên viên CiC (Chunker-in-Charge) sẽ liên hệ qua điện thoại/Zalo để thống nhất lịch cụ thể và gửi link phòng họp.
+2. Hình thức đánh giá diễn ra trực tiếp (Offline) 1-on-1 trong vòng 15 – 20 phút.
+3. Giữ tinh thần thoải mái, không cần học vẹt hay chuẩn bị kịch bản trước.
+4. Chuyên viên điều phối sẽ liên hệ qua điện thoại/Zalo để thống nhất lịch chính thức và gửi địa chỉ cơ sở.
 
 Trân trọng,
 Hệ thống Đánh giá CHUNKS Test 100

@@ -58,6 +58,25 @@ export async function apiValidateReferral(code: string): Promise<ReferralValidat
   return await res.json();
 }
 
+export async function apiSelfRegisterChunker(data: {
+  fullName: string;
+  email: string;
+  phone?: string;
+  preferredCode?: string;
+}): Promise<{ success: boolean; chunker: { code: string; name: string } }> {
+  const res = await fetch(`${getApiBaseUrl()}/api/public/chunkee/register-referrer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  const responseData = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(responseData.error || responseData.details || 'Không thể tạo mã giới thiệu lúc này');
+  }
+  return responseData;
+}
+
 export async function apiRegisterCandidate(
   data: CandidateRegisterInput
 ): Promise<CandidateRegistrationResponse> {
@@ -208,9 +227,8 @@ export async function apiCreateChunker(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed to create chunker');
+    throw new Error(err.details || err.error || 'Failed to create chunker');
   }
-
   return await res.json();
 }
 

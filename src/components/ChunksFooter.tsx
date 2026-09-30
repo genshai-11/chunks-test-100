@@ -33,9 +33,10 @@ export const ChunksFooter: React.FC<Props> = ({
               className="flex items-center gap-2 cursor-pointer group text-left focus-visible:outline-none"
               aria-label="Back to top"
             >
-              <div
-                className="w-[14px] h-[14px] rounded-[2px] bg-[#ff3b30] shrink-0 group-hover:bg-[#c81e16] transition-colors"
-                aria-hidden="true"
+              <img
+                src="/logo.png"
+                alt="CHUNKS Logo"
+                className="w-[18px] h-[18px] object-contain shrink-0"
               />
               <span className="text-[16px] font-semibold tracking-[-0.02em] text-[#0a0a0a]">
                 CHUNKS TEST 100

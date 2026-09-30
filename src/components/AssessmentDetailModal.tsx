@@ -63,7 +63,7 @@ export const AssessmentDetailModal: React.FC<Props> = ({
                 Duration
               </span>
               <span className="text-[16px] font-semibold font-mono tabular-nums text-[#0a0a0a]">
-                45 mins
+                15 - 20 mins
               </span>
             </div>
             <div>
@@ -71,23 +71,23 @@ export const AssessmentDetailModal: React.FC<Props> = ({
                 Challenges
               </span>
               <span className="text-[16px] font-semibold font-mono tabular-nums text-[#0a0a0a]">
-                49 items
-              </span>
-            </div>
-            <div>
-              <span className="block text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/50">
-                Progression
-              </span>
-              <span className="text-[16px] font-semibold font-mono tabular-nums text-[#0a0a0a]">
-                7 Levels
+                21 items
               </span>
             </div>
             <div>
               <span className="block text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/50">
                 Format
               </span>
+              <span className="text-[16px] font-semibold font-mono text-[#0a0a0a]">
+                Offline 1-on-1
+              </span>
+            </div>
+            <div>
+              <span className="block text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/50">
+                Evaluator
+              </span>
               <span className="text-[16px] font-semibold text-[#c81e16]">
-                1-on-1 CiC
+                CiC Specialist
               </span>
             </div>
           </div>
