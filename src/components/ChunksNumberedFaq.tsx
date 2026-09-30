@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { SwissGlyph } from './SwissGlyph';
 
 interface ChunksFaqItem {
@@ -15,9 +16,9 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
     questionVi: 'Bài Mini-Test 21 câu của CHUNKS là gì và khác gì bài test thông thường?',
     questionEn: 'What is the CHUNKS 21-question Mini-Test and how does it differ from traditional tests?',
     answerVi:
-      'CHUNKS không áp dụng hình thức trắc nghiệm ngữ pháp hay phần mềm chấm điểm tự động. Đây là bài Mini-Test 21 câu ngắn diễn ra trong 15 – 20 phút trực tiếp (1-on-1) cùng Chunker-in-Charge (CiC) nhằm ghi nhận phản xạ ngôn ngữ thực tế qua ba trụ cột Chuyển động, Âm thanh và Cảm xúc (MSE).',
+      'CHUNKS không áp dụng hình thức trắc nghiệm ngữ pháp hay phần mềm chấm điểm tự động. Đây là bài Mini-Test 21 câu ngắn diễn ra trong 15 – 20 phút trực tiếp (1-on-1) cùng Chunker-in-Charge (CiC) nhằm quan sát phản xạ ngôn ngữ thực tế qua ba trụ cột Chuyển động, Âm thanh và Cảm xúc (MSE).',
     answerEn:
-      'CHUNKS does not use multiple-choice grammar quizzes or automated scoring bots. It is a 21-question Mini-Test conducted in 15–20 minutes in-person (1-on-1) with a Chunker-in-Charge (CiC) to observe real-world speech reflex across Motion, Sound, and Emotion (MSE).',
+      'CHUNKS does not use multiple-choice grammar quizzes or automated scoring software. It is a 21-question Mini-Test conducted in 15–20 minutes in person (1-on-1) with an authorized Chunker-in-Charge (CiC) to observe real-world spoken reflex across Motion, Sound, and Emotion (MSE).',
   },
   {
     number: '02',
@@ -26,7 +27,7 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
     answerVi:
       'Bài đánh giá được tổ chức hoàn toàn trực tiếp (Offline) 1-on-1 tại cơ sở khảo sát của CHUNKS. Tương tác trực tiếp giúp CiC quan sát toàn diện nhịp thở, ngữ điệu, ánh mắt và phản xạ cơ thể trong thời gian thực – điều mà các nền tảng trực tuyến không thể ghi nhận chân thực.',
     answerEn:
-      'The session is conducted strictly in-person (Offline) 1-on-1 at a CHUNKS assessment center. In-person interaction enables the CiC to observe breath rhythm, vocal inflection, eye contact, and physical speech reflex in real time.',
+      'The session is conducted strictly in-person (Offline) 1-on-1 at a designated CHUNKS assessment center. In-person interaction enables the CiC to observe breath rhythm, vocal inflection, eye contact, and physical speech reflex in real time – nuances that virtual platforms cannot genuinely capture.',
   },
   {
     number: '03',
@@ -42,9 +43,9 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
     questionVi: 'Ghi chú thời gian trên biểu mẫu có phải lịch hẹn chính thức?',
     questionEn: 'Is the time note on the form a confirmed appointment?',
     answerVi:
-      'Không. Ghi chú chỉ giúp chúng tôi biết thời gian bạn có thể sắp xếp. Sau khi nhận đăng ký, đội ngũ CHUNKS sẽ gọi điện hoặc nhắn Zalo để thống nhất lịch hẹn trực tiếp và địa điểm.',
+      'Không. Khung giờ ghi chú trên biểu mẫu là thời gian mong muốn dự kiến của bạn. Sau khi tiếp nhận đăng ký, đội ngũ điều phối viên CHUNKS sẽ gọi điện hoặc nhắn Zalo để thống nhất lịch hẹn chính thức phù hợp nhất với bạn tại cơ sở.',
     answerEn:
-      'No. The note simply lets us know when you might be available. CHUNKS operations will call or message you via Zalo to agree on the in-person appointment and venue.',
+      'No. The time note records your desired expected schedule. Upon receiving your registration, CHUNKS coordinators will call or message via Zalo to confirm the final official appointment at the center.',
   },
   {
     number: '05',
@@ -60,18 +61,18 @@ const CHUNKS_FAQ: ChunksFaqItem[] = [
     questionVi: 'Nếu tôi chưa có mã giới thiệu thì có đăng ký được không?',
     questionEn: 'Can I register if I do not currently have a referral code?',
     answerVi:
-      'Được. Nếu chưa có mã từ Chunkee quen biết, hệ thống sẽ tự động xếp bạn vào danh sách chờ ưu tiên PILOT100. Ngoài ra, nếu bạn là một Chunkee, bạn có thể tự tạo mã giới thiệu cá nhân ngay trên trang chủ để gửi cho bạn bè.',
+      'Được. Nếu chưa có mã giới thiệu từ Chunkee quen biết, hệ thống sẽ tự động xếp bạn vào danh sách chờ ưu tiên PILOT100. Ngoài ra, nếu bạn đã là một Chunkee, bạn có thể tự tạo mã giới thiệu cá nhân ngay trên trang chủ qua cổng Chunkee Gateway để chia sẻ cho bạn bè.',
     answerEn:
-      'Yes. If you do not have an inviter code, the system automatically places you on the priority pilot waitlist (PILOT100). Furthermore, Chunkees can generate their own personal referral link directly from the home page.',
+      'Yes. If you do not have an invitation code from a known Chunkee, the system automatically places you on the priority pilot waitlist (PILOT100). Furthermore, if you are a Chunkee, you can self-provision your personal referral link and QR code directly from the home page via the Chunkee Gateway.',
   },
   {
     number: '07',
     questionVi: 'Thông tin cá nhân (SĐT, Email) của tôi được bảo vệ như thế nào?',
     questionEn: 'How are my contact details and diagnostic notes protected?',
     answerVi:
-      'Thông tin liên hệ được lưu trên máy chủ và chỉ bộ phận được phân quyền sử dụng để điều phối buổi đánh giá, gửi xác nhận và trao đổi với bạn.',
+      'Thông tin liên hệ được lưu trữ bảo mật trên máy chủ và chỉ bộ phận được phân quyền sử dụng để điều phối buổi đánh giá, gửi thư xác nhận và trao đổi trực tiếp với bạn. CHUNKS cam kết không chia sẻ dữ liệu cho bên thứ ba vì mục đích thương mại.',
     answerEn:
-      'Contact details are stored on the server and used by authorized staff to coordinate the assessment, send confirmation and follow up with you.',
+      'Contact details are securely stored on the server and used strictly by authorized staff to coordinate the assessment, dispatch confirmation emails, and follow up directly with you. CHUNKS does not share personal data with third parties for commercial purposes.',
   },
 ];
 
@@ -81,6 +82,7 @@ interface Props {
 
 export const ChunksNumberedFaq: React.FC<Props> = ({ lang }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const toggleRow = (index: number) => {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -88,7 +90,13 @@ export const ChunksNumberedFaq: React.FC<Props> = ({ lang }) => {
 
   return (
     <section id="faq" className="scroll-mt-24 w-full">
-      <div className="max-w-[1180px] mx-auto px-6 md:px-10">
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.08 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-[1180px] mx-auto px-6 md:px-10"
+      >
         {/* 12-Column Split Section Header */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 pt-16 md:pt-24 pb-7 md:pb-10 items-baseline">
           {/* Left Column (col-span-12 md:col-span-3): Micro Eyebrow */}
@@ -200,7 +208,7 @@ export const ChunksNumberedFaq: React.FC<Props> = ({ lang }) => {
             );
           })}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };

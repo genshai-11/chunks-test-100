@@ -231,7 +231,16 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               <motion.div initial={reduceMotion ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.32 }} className="chunks-hero-info">
                 <p>{lang === 'vi' ? 'Một cuộc gặp trực tiếp để quan sát cách bạn duy trì sự chú ý, ứng biến và kết nối ý tưởng khi nói tiếng Anh. Mini-Test 21 câu, 15–20 phút, 1-on-1 cùng Chunker-in-Charge (CiC); không phải bài trắc nghiệm ngữ pháp.' : 'A live conversation to observe how you sustain attention, improvise and connect ideas in spoken English. A 21-question Mini-Test, 15–20 minutes, in person with a Chunker-in-Charge (CiC); not a grammar quiz.'}</p>
                 <div className="chunks-hero-actions">
-                  <button type="button" className="chunks-pill" onClick={scrollToForm}>{lang === 'vi' ? 'Đăng ký Mini-Test' : 'Register for the Mini-Test'} <ArrowUpRight size={17} aria-hidden="true" /></button>
+                  <motion.button
+                    type="button"
+                    className="chunks-pill cursor-pointer"
+                    whileHover={reduceMotion ? {} : { scale: 1.02 }}
+                    whileTap={reduceMotion ? {} : { scale: 0.98 }}
+                    onClick={scrollToForm}
+                  >
+                    {lang === 'vi' ? 'Đăng ký Mini-Test' : 'Register for the Mini-Test'}{' '}
+                    <ArrowUpRight size={17} aria-hidden="true" />
+                  </motion.button>
                   <button type="button" onClick={() => onOpenChunkerHub?.(referralCode)} className="text-[13px] text-[var(--chunks-muted)] hover:text-[var(--chunks-accent)] transition-colors flex items-center gap-2 cursor-pointer"><QrCode size={15} />{lang === 'vi' ? 'Chunkee? Link & QR' : 'Chunkee? Link & QR'}</button>
                 </div>
               </motion.div>
@@ -292,8 +301,8 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
            <div className="text-[14px] sm:text-[14.5px] text-[#0a0a0a]/80 leading-relaxed max-w-3xl space-y-3 font-normal">
              <p>
                {lang === 'vi'
-                 ? 'Để nói một câu tiếng Anh trôi chảy ngoài đời thực, tâm trí bạn phải điều phối ba việc cùng lúc: tập trung giữ mạch câu, ứng biến khi đổi hướng, và tin vào trực giác ngôn ngữ của mình.'
-                 : 'To speak fluent English in real life, your mind must coordinate three things simultaneously: maintaining focus on your train of thought, improvising when directions shift, and trusting your linguistic intuition.'}
+                 ? 'Để nói một câu tiếng Anh trôi chảy ngoài đời thực, tâm trí bạn phải điều phối ba việc cùng lúc: tập trung giữ mạch câu, ứng biến khi tình huống đổi hướng, và tin vào trực giác ngôn ngữ của mình.'
+                 : 'To speak fluent English in real life, your mind must coordinate three things simultaneously: maintaining focus on your train of thought, improvising when situations shift direction, and trusting your linguistic intuition.'}
              </p>
              <p className="font-semibold text-[#c81e16]">
                {lang === 'vi'
@@ -357,10 +366,18 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
           </div>
         )}
         {!isCodeValid && (
-          <motion.div initial={reduceMotion ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-8 p-5 sm:p-6 border border-[#c81e16]/30 bg-[#fff5f2] relative overflow-hidden">
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 p-6 sm:p-7 border border-[#c81e16]/30 bg-[#fff5f2] relative overflow-hidden max-w-xl mx-auto text-center flex flex-col items-center shadow-xs"
+          >
             <span className="absolute left-0 top-0 bottom-0 w-1 bg-[#c81e16]" aria-hidden="true" />
-            <span className="block text-[10px] font-mono uppercase tracking-[0.2em] font-bold text-[#a81711] mb-2">{lang === 'vi' ? 'LỜI MỜI / 01' : 'INVITATION / 01'}</span>
-            <label htmlFor="referral-code" className="block text-sm font-medium">
+            <span className="inline-block text-[10px] font-mono uppercase tracking-[0.2em] font-bold text-[#a81711] mb-2">
+              {lang === 'vi' ? 'LỜI MỜI / 01' : 'INVITATION / 01'}
+            </span>
+            <label htmlFor="referral-code" className="block text-sm font-medium text-[#0a0a0a]">
               {lang === 'vi' ? 'Bạn có mã giới thiệu từ Chunkee?' : 'Have a referral code from a Chunkee?'}
             </label>
             <input
@@ -369,9 +386,9 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               onChange={(event) => setReferralCode(event.target.value)}
               maxLength={30}
               placeholder={lang === 'vi' ? 'Nhập mã nếu có' : 'Enter your code if you have one'}
-              className="mt-3 w-full sm:max-w-xs bg-white border border-[#0a0a0a]/25 px-4 py-3 focus:outline-2 focus:outline-[#c81e16]"
+              className="mt-3 w-full sm:max-w-xs mx-auto text-center bg-white border border-[#0a0a0a]/25 px-4 py-3 focus:outline-2 focus:outline-[#c81e16] font-mono uppercase tracking-wider"
             />
-            <p className="mt-2 text-xs text-slate-600">
+            <p className="mt-2 text-xs text-slate-600 max-w-md mx-auto text-center">
               {loadingCode
                 ? (lang === 'vi' ? 'Đang kiểm tra mã…' : 'Checking code…')
                 : (lang === 'vi'
@@ -626,54 +643,174 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               </div>
 
               {/* 02. MỨC ĐỘ BÀI TEST (ĐỘ KHÓ) */}
-              <div className="space-y-3">
+              <div className="space-y-3" id="field-testLevel">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
                   02. {lang === 'vi' ? 'MỨC ĐỘ BÀI TEST (ĐỘ KHÓ)' : 'TEST LEVEL (DIFFICULTY)'}
                 </span>
-                <div className="pt-1">
-                  <label htmlFor="field-testLevel" className="sr-only">
-                    {lang === 'vi' ? 'Mức độ bài test (Độ khó)' : 'Test level (Difficulty)'}
-                  </label>
-                  <select
-                    id="field-testLevel"
-                    disabled={submitting}
-                    value={testLevel || 'easy'}
-                    onChange={(e) => {
-                      setTestLevel(e.target.value as 'easy' | 'hard');
+                <div
+                  role="radiogroup"
+                  aria-label={lang === 'vi' ? 'Mức độ bài test (Độ khó)' : 'Test level (Difficulty)'}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1"
+                >
+                  {/* Card A: Cơ bản (Dễ) */}
+                  <motion.div
+                    role="radio"
+                    aria-checked={testLevel === 'easy'}
+                    tabIndex={0}
+                    onClick={() => {
+                      setTestLevel('easy');
                       clearFieldError('testLevel');
                     }}
-                    className={`w-full border px-3.5 py-3 text-[14px] text-[#0a0a0a] focus:outline-none transition-colors bg-white cursor-pointer ${
-                      fieldErrors.testLevel
-                        ? 'border-[#c81e16] bg-rose-50/20 focus:border-[#c81e16]'
-                        : 'border-[rgba(10,10,10,0.2)] focus:border-[#0a0a0a]'
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setTestLevel('easy');
+                        clearFieldError('testLevel');
+                      }
+                    }}
+                    whileHover={reduceMotion ? {} : { y: -2 }}
+                    whileTap={reduceMotion ? {} : { scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className={`relative p-5 border cursor-pointer select-none transition-all flex flex-col justify-between rounded-[2px] ${
+                      testLevel === 'easy'
+                        ? 'border-[#c81e16] bg-[#fff5f2] ring-2 ring-[#c81e16]/20 shadow-sm'
+                        : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/40 hover:bg-slate-50/50'
                     }`}
                   >
-                    <option value="easy">
-                      {lang === 'vi'
-                        ? 'Cơ bản (Dễ) — Nhịp độ tiêu chuẩn, làm quen phản xạ tự nhiên'
-                        : 'Basic (Easy) — Standard pace, natural reflex acclimatization'}
-                    </option>
-                    <option value="hard">
-                      {lang === 'vi'
-                        ? 'Nâng cao (Khó) — Nhịp độ dồn dập, tăng ma sát phản xạ dưới áp lực'
-                        : 'Advanced (Hard) — Rapid pace, heightened reflex friction under pressure'}
-                    </option>
-                  </select>
-                  {fieldErrors.testLevel && (
-                    <p className="text-[12px] text-[#c81e16] mt-1 flex items-center gap-1 font-mono">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{fieldErrors.testLevel}</span>
-                    </p>
-                  )}
-                  <p className="text-[12.5px] text-[#0a0a0a]/70 flex items-center gap-1.5 mt-2.5">
-                    <span>💡</span>
-                    <span>
-                      {lang === 'vi'
-                        ? 'Chuyên viên CiC sẽ linh hoạt điều chỉnh theo nhịp nói và phản xạ thực tế của bạn.'
-                        : 'The CiC specialist will flexibly adapt to your actual speech rhythm and reflex.'}
-                    </span>
-                  </p>
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <span
+                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-bold px-2 py-0.5 transition-colors ${
+                            testLevel === 'easy'
+                              ? 'bg-[#c81e16] text-white'
+                              : 'bg-slate-100 text-[#0a0a0a]/70'
+                          }`}
+                        >
+                          {lang === 'vi' ? 'TIÊU CHUẨN' : 'STANDARD'}
+                        </span>
+
+                        {/* Tactile Radio Checkmark */}
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                            testLevel === 'easy'
+                              ? 'border-[#c81e16] bg-[#c81e16]'
+                              : 'border-[rgba(10,10,10,0.28)] bg-white'
+                          }`}
+                        >
+                          {testLevel === 'easy' && (
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="text-[17px] font-bold tracking-tight text-[#0a0a0a]">
+                        {lang === 'vi' ? 'Cơ bản (Dễ)' : 'Basic (Easy)'}
+                      </h3>
+
+                      <p className="text-[13px] text-[#0a0a0a]/75 mt-1.5 leading-relaxed font-normal">
+                        {lang === 'vi'
+                          ? 'Nhịp độ tiêu chuẩn · Làm quen phản xạ tự nhiên cùng CiC.'
+                          : 'Standard pace · Natural reflex acclimatization with CiC.'}
+                      </p>
+                    </div>
+
+                    <div className="mt-3.5 pt-3 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] text-[#0a0a0a]/60 font-light flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                      <span>
+                        {lang === 'vi'
+                          ? 'Phù hợp quan sát nhịp phản hồi căn bản.'
+                          : 'Ideal to observe baseline response rhythm.'}
+                      </span>
+                    </div>
+                  </motion.div>
+
+                  {/* Card B: Nâng cao (Khó) */}
+                  <motion.div
+                    role="radio"
+                    aria-checked={testLevel === 'hard'}
+                    tabIndex={0}
+                    onClick={() => {
+                      setTestLevel('hard');
+                      clearFieldError('testLevel');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        setTestLevel('hard');
+                        clearFieldError('testLevel');
+                      }
+                    }}
+                    whileHover={reduceMotion ? {} : { y: -2 }}
+                    whileTap={reduceMotion ? {} : { scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className={`relative p-5 border cursor-pointer select-none transition-all flex flex-col justify-between rounded-[2px] ${
+                      testLevel === 'hard'
+                        ? 'border-[#c81e16] bg-[#fff5f2] ring-2 ring-[#c81e16]/20 shadow-sm'
+                        : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/40 hover:bg-rose-50/20'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <span
+                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-bold px-2 py-0.5 transition-colors ${
+                            testLevel === 'hard'
+                              ? 'bg-[#c81e16] text-white'
+                              : 'bg-rose-100/70 text-[#c81e16]'
+                          }`}
+                        >
+                          {lang === 'vi' ? 'DỒN DẬP' : 'INTENSIVE'}
+                        </span>
+
+                        {/* Tactile Radio Checkmark */}
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                            testLevel === 'hard'
+                              ? 'border-[#c81e16] bg-[#c81e16]'
+                              : 'border-[rgba(10,10,10,0.28)] bg-white'
+                          }`}
+                        >
+                          {testLevel === 'hard' && (
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="text-[17px] font-bold tracking-tight text-[#0a0a0a]">
+                        {lang === 'vi' ? 'Nâng cao (Khó)' : 'Advanced (Hard)'}
+                      </h3>
+
+                      <p className="text-[13px] text-[#0a0a0a]/75 mt-1.5 leading-relaxed font-normal">
+                        {lang === 'vi'
+                          ? 'Nhịp độ dồn dập · Tăng ma sát phản xạ dưới áp lực cao.'
+                          : 'Rapid pace · Heightened reflex friction under elevated pressure.'}
+                      </p>
+                    </div>
+
+                    <div className="mt-3.5 pt-3 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] text-[#0a0a0a]/60 font-light flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#c81e16] shrink-0" />
+                      <span>
+                        {lang === 'vi'
+                          ? 'Thử thách ứng biến khi CiC tăng tốc nhịp trao đổi.'
+                          : 'Challenges improvisation when CiC increases pacing.'}
+                      </span>
+                    </div>
+                  </motion.div>
                 </div>
+
+                {fieldErrors.testLevel && (
+                  <p className="text-[12px] text-[#c81e16] mt-1 flex items-center gap-1 font-mono">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.testLevel}</span>
+                  </p>
+                )}
+                <p className="text-[12.5px] text-[#0a0a0a]/70 flex items-center gap-1.5 mt-2.5">
+                  <span>💡</span>
+                  <span>
+                    {lang === 'vi'
+                      ? 'Chuyên viên CiC sẽ linh hoạt điều chỉnh theo nhịp nói và phản xạ thực tế của bạn.'
+                      : 'The CiC specialist will flexibly adapt to your actual speech rhythm and reflex.'}
+                  </span>
+                </p>
               </div>
 
               {/* 03. LỊCH TEST MONG MUỐN (GHI CHÚ DỰ KIẾN) */}
@@ -728,9 +865,11 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                     : 'By submitting, you agree to allow CHUNKS operations to coordinate your session.'}
                 </div>
 
-                <button
+                <motion.button
                   type="submit"
                   disabled={submitting}
+                  whileHover={reduceMotion || submitting ? {} : { scale: 1.02 }}
+                  whileTap={reduceMotion || submitting ? {} : { scale: 0.98 }}
                   className="bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[15px] font-bold rounded-full px-8 py-3.5 flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 w-full sm:w-auto shadow-sm"
                 >
                   {submitting ? (
@@ -743,7 +882,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                        {lang === 'vi' ? 'Gửi yêu cầu tham gia' : 'Send registration request'}
                     </span>
                   )}
-                </button>
+                </motion.button>
               </div>
             </form>
           </div>
