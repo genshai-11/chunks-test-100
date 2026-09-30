@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { dbService, getServerFirestore, hashPhone, PROJECT_ID } from '../src/db/database';
 import type { Candidate, CandidateStatus, Chunker } from '../src/types';
@@ -9,7 +9,9 @@ import type { Candidate, CandidateStatus, Chunker } from '../src/types';
 const source = resolve(process.argv.find((arg, index) => index > 1 && !arg.startsWith('--')) || 'data/chunks.db');
 const apply = process.argv.includes('--apply');
 if (!existsSync(source)) throw new Error('Snapshot not found');
-if (existsSync(`${source}-wal`)) throw new Error('Checkpoint the SQLite WAL before migration');
+if (existsSync(`${source}-wal`) && statSync(`${source}-wal`).size > 0) {
+  throw new Error('Checkpoint the SQLite WAL before migration');
+}
 const db = getServerFirestore();
 const sqlite = new DatabaseSync(source, { readOnly: true });
 
@@ -48,13 +50,25 @@ try {
     const id = String(row.id);
     const code = String(row.chunkerCode || 'PILOT100').trim().toUpperCase();
     const resolvedCode = code === 'DIRECT' ? 'PILOT100' : code;
-    const chunker = mappedChunkers.get(resolvedCode);
+    let chunker = mappedChunkers.get(resolvedCode);
+    if (!chunker) {
+      chunker = {
+        id: resolvedCode,
+        code: resolvedCode,
+        name: String(row.chunkerName || resolvedCode),
+        email: '',
+        active: true,
+        referralCount: 0,
+        createdAt: String(row.createdAt),
+        notes: 'Discovered during migration',
+      };
+      mappedChunkers.set(resolvedCode, chunker);
+    }
     const createdAt = String(row.createdAt);
     const timestamp = Date.parse(createdAt);
     if (!id || candidateIds.has(id) || !Number.isFinite(timestamp)) {
       throw new Error('Duplicate candidate ID or invalid registration date');
     }
-    if (!chunker) throw new Error(`Missing referrer ${resolvedCode}; reconcile source before migration`);
     candidateIds.add(id);
     const type = String(row.testType).toLowerCase();
     if (type !== 'green' && type !== 'red') throw new Error('Unknown assessment type');

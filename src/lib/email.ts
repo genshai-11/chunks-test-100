@@ -96,8 +96,10 @@ export async function sendEmail({
         return { success: false, status: 'failed', provider: 'resend', error: `Resend HTTP ${res.status}` };
       }
       return { success: true, status: 'accepted', provider: 'resend', messageId: data.id };
-    } catch {
-      return { success: false, status: 'failed', provider: 'resend', error: 'Resend request failed' };
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('[EMAIL_RESEND_ERROR]:', errorMsg);
+      return { success: false, status: 'failed', provider: 'resend', error: errorMsg };
     }
   }
 
@@ -126,8 +128,10 @@ export async function sendEmail({
       });
 
       return { success: true, status: 'accepted', provider: 'smtp', messageId: info.messageId };
-    } catch {
-      return { success: false, status: 'failed', provider: 'smtp', error: 'SMTP request failed' };
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('[EMAIL_SMTP_ERROR]:', errorMsg);
+      return { success: false, status: 'failed', provider: 'smtp', error: errorMsg };
     }
   }
 
