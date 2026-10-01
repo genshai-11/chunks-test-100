@@ -70,7 +70,7 @@ async function startServer() {
     const origin = req.headers.origin;
     if (origin && ALLOWED_ORIGINS.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       res.setHeader('Vary', 'Origin');
     }
@@ -329,17 +329,23 @@ async function startServer() {
     try {
       const chunker = await dbService.updateChunker(req.params.code, req.body);
       return res.json({ success: true, chunker });
-    } catch (err: any) {
-      return res.status(err.message === 'Chunker not found' ? 404 : 503).json({ error: err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return res.status(message === 'Chunker not found' ? 404 : 503).json({ error: message });
     }
   });
 
   app.delete('/api/admin/chunkers/:code', adminAuthMiddleware, async (req: Request, res: Response) => {
+    const code = req.params.code.trim().toUpperCase();
+    if (code === 'PILOT100') {
+      return res.status(400).json({ error: 'Cannot delete default PILOT100 account' });
+    }
     try {
-      await dbService.deleteChunker(req.params.code);
+      await dbService.deleteChunker(code);
       return res.json({ success: true, message: 'Chunker deleted successfully' });
-    } catch (err: any) {
-      return res.status(err.message === 'Chunker not found' ? 404 : 503).json({ error: err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return res.status(message === 'Chunker not found' ? 404 : 503).json({ error: message });
     }
   });
 
@@ -353,14 +359,20 @@ async function startServer() {
   });
 
   app.post('/api/admin/settings/notifications', adminAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-    const { notificationEmails, enabled } = req.body || {};
-    if (!Array.isArray(notificationEmails) || notificationEmails.length < 1 || notificationEmails.length > 20 ||
-      !notificationEmails.every((email: unknown) => typeof email === 'string' && isValidEmailAddress(email))) {
+    let { notificationEmails, enabled } = req.body || {};
+    if (typeof notificationEmails === 'string') {
+      notificationEmails = notificationEmails.split(/[,;\n]/).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+    }
+    const cleanEmails = Array.isArray(notificationEmails)
+      ? notificationEmails.map((email: unknown) => String(email).trim().toLowerCase()).filter(Boolean)
+      : [];
+    if (cleanEmails.length < 1 || cleanEmails.length > 20 ||
+      !cleanEmails.every((email: string) => isValidEmailAddress(email))) {
       return res.status(400).json({ error: 'Invalid notification recipients' });
     }
     try {
       const settings = await dbService.saveNotificationSettings({
-        notificationEmails: notificationEmails.map((email: string) => email.trim().toLowerCase()),
+        notificationEmails: cleanEmails,
         enabled: enabled === true,
       }, req.adminEmail!);
       return res.json({ success: true, settings });

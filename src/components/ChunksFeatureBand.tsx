@@ -12,14 +12,14 @@ interface FeatureItem {
 const FEATURES: FeatureItem[] = [
   {
     id: '01',
-    label: 'CHUNKS TEST',
-    sub: 'Tiêu chuẩn khảo sát',
+    label: 'CHUNKS TEST 100',
+    sub: 'Chỉ tiêu 100 ứng viên',
     icon: Sparkles,
   },
   {
     id: '02',
-    label: 'CHUNKS THEORY',
-    sub: 'Định vị MN107.v2.1',
+    label: 'GIỚI HẠN 100 SUẤT',
+    sub: 'Đăng ký có kiểm soát',
     icon: Compass,
   },
   {

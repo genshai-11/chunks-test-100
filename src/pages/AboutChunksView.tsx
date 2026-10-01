@@ -28,7 +28,7 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
             <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[2px] bg-red-50 border border-red-200/80 text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
                 <ShieldCheck size={13} />
-                <span>CHUNKS THEORY · MN107.V2.1</span>
+                <span>CHUNKS THEORY</span>
               </span>
               <span className="hidden sm:inline-block text-[12px] font-mono text-[#0a0a0a]/50">
                 CONSCIOUS PERFORMANCE
@@ -102,13 +102,19 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
             </div>
 
             {/* Pillar Snapshot Specimen Card */}
-            <div className="lg:col-span-5 bg-white border border-[rgba(10,10,10,0.12)] p-6 rounded-[2px] shadow-xs space-y-4">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="lg:col-span-5 bg-white border border-[rgba(10,10,10,0.12)] p-6 rounded-[2px] shadow-xs space-y-4"
+            >
               <div className="flex items-center justify-between border-b border-[rgba(10,10,10,0.08)] pb-3">
                 <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0a0a0a]/70">
                   {lang === 'vi' ? '3 NHÁNH ĐÁNH GIÁ CHỦ LỰC' : '3 CORE ASSESSMENT STREAMS'}
                 </span>
                 <span className="text-[11px] font-mono text-[#c81e16] bg-red-50 px-2 py-0.5 rounded-[2px]">
-                  SPECIAL MN107
+                  CHUNKS FRAMEWORK
                 </span>
               </div>
 
@@ -119,7 +125,7 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
                   </div>
                   <div className="min-w-0">
                     <strong className="block text-[13px] font-bold text-[#0a0a0a]">
-                      {lang === 'vi' ? 'Tập Trung (Focus Stream)' : 'Focus Stream (%c)'}
+                      {lang === 'vi' ? 'Tập Trung (Focus Stream - Green)' : 'Focus Stream (%c - Green)'}
                     </strong>
                     <span className="block text-[11.5px] text-[#0a0a0a]/70 font-light mt-0.5">
                       {lang === 'vi' ? 'Giữ vững sự chú ý và trường âm thanh trong phòng test.' : 'Sustaining attention and acoustic projection under friction.'}
@@ -127,13 +133,13 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
                   </div>
                 </div>
 
-                <div className="p-3 rounded-[2px] bg-amber-50/50 border border-amber-200/50 flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                <div className="p-3 rounded-[2px] bg-rose-50/50 border border-rose-200/50 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
                     %r
                   </div>
                   <div className="min-w-0">
                     <strong className="block text-[13px] font-bold text-[#0a0a0a]">
-                      {lang === 'vi' ? 'Ứng Biến (Improv Stream)' : 'Improv Stream (%r)'}
+                      {lang === 'vi' ? 'Ứng Biến (Improv Stream - Red)' : 'Improv Stream (%r - Red)'}
                     </strong>
                     <span className="block text-[11.5px] text-[#0a0a0a]/70 font-light mt-0.5">
                       {lang === 'vi' ? 'Xoay xở linh hoạt với gợi ý mới mà không phụ thuộc kịch bản.' : 'Agile improvisation with unscripted prompts.'}
@@ -141,13 +147,13 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
                   </div>
                 </div>
 
-                <div className="p-3 rounded-[2px] bg-rose-50/50 border border-rose-200/50 flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
-                    %o
+                <div className="p-3 rounded-[2px] bg-blue-50/50 border border-blue-200/50 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                    %i
                   </div>
                   <div className="min-w-0">
                     <strong className="block text-[13px] font-bold text-[#0a0a0a]">
-                      {lang === 'vi' ? 'Quan Sát (Observation)' : 'Observation (%o)'}
+                      {lang === 'vi' ? 'Quan Sát (Observation - Blue)' : 'Observation (%i - Blue)'}
                     </strong>
                     <span className="block text-[11.5px] text-[#0a0a0a]/70 font-light mt-0.5">
                       {lang === 'vi' ? 'Nhận diện phản xạ Thân – Khẩu – Ý (MSE) nguyên bản.' : 'Observing authentic Motion–Sound–Emotion reflexes.'}
@@ -155,9 +161,9 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
                   </div>
                 </div>
               </div>
+            </motion.div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* 2. Tam Trụ Khảo Sát: Focus, Improv, Observe */}
@@ -172,19 +178,28 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
             </h2>
             <p className="text-[15px] text-[#0a0a0a]/70 font-light mt-2">
               {lang === 'vi'
-                ? 'Được thiết kế theo tài liệu Special CHUNKS Theory MN107.v2.1 để ghi nhận chân thực phản xạ của người học khi nói dưới ma sát nhận thức.'
-                : 'Designed under Special CHUNKS Theory MN107.v2.1 to observe authentic human performance under conversational friction.'}
+                ? 'Được thiết kế theo phương pháp CHUNKS Theory để ghi nhận chân thực phản xạ của người học khi nói dưới ma sát nhận thức.'
+                : 'Designed under CHUNKS Theory to observe authentic human performance under conversational friction.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, staggerChildren: 0.15 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
             {/* Card 1: Focus */}
-            <div className="p-7 bg-white border border-[rgba(10,10,10,0.14)] space-y-4 rounded-[2px] shadow-xs">
+            <motion.div
+              whileHover={{ y: -4, borderColor: '#059669' }}
+              className="p-7 bg-white border border-[rgba(10,10,10,0.14)] space-y-4 rounded-[2px] shadow-xs transition-colors"
+            >
               <div className="flex items-center justify-between">
                 <span className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-mono font-bold text-xs">
                   %c
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#0a0a0a]/50">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold">
                   Green Focus
                 </span>
               </div>
@@ -199,15 +214,18 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
               <div className="pt-2 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] font-mono text-[#0a0a0a]/60">
                 <span>Rèn luyện: CHUNKS Drills</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Card 2: Improv */}
-            <div className="p-7 bg-white border border-[rgba(10,10,10,0.14)] space-y-4 rounded-[2px] shadow-xs">
+            <motion.div
+              whileHover={{ y: -4, borderColor: '#c81e16' }}
+              className="p-7 bg-white border border-[rgba(10,10,10,0.14)] space-y-4 rounded-[2px] shadow-xs transition-colors"
+            >
               <div className="flex items-center justify-between">
                 <span className="w-8 h-8 rounded-full bg-rose-50 text-[#c81e16] border border-rose-200 flex items-center justify-center font-mono font-bold text-xs">
                   %r
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#0a0a0a]/50">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#c81e16] font-semibold">
                   Red Improv
                 </span>
               </div>
@@ -222,15 +240,18 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
               <div className="pt-2 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] font-mono text-[#0a0a0a]/60">
                 <span>Rèn luyện: CHUNKS Battle</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Card 3: Observe */}
-            <div className="p-7 bg-white border border-[rgba(10,10,10,0.14)] space-y-4 rounded-[2px] shadow-xs">
+            <motion.div
+              whileHover={{ y: -4, borderColor: '#2563eb' }}
+              className="p-7 bg-white border border-[rgba(10,10,10,0.14)] space-y-4 rounded-[2px] shadow-xs transition-colors"
+            >
               <div className="flex items-center justify-between">
                 <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-mono font-bold text-xs">
                   %i
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#0a0a0a]/50">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-blue-700 font-semibold">
                   Blue Observe
                 </span>
               </div>
@@ -245,9 +266,10 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
               <div className="pt-2 border-t border-[rgba(10,10,10,0.08)] text-[11.5px] font-mono text-[#0a0a0a]/60">
                 <span>Rèn luyện: CHUNKS Mirror</span>
               </div>
-            </div>
+            </motion.div>
+          </motion.div>
           </div>
-        </div>
+
       </section>
 
       {/* 3. Phương Pháp MSE (Motion, Sound, Emotion) */}

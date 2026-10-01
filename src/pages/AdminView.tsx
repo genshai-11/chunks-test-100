@@ -62,7 +62,8 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [testTypeFilter, setTestTypeFilter] = useState('ALL');
   const [levelFilter, setLevelFilter] = useState('ALL');
-
+  const [referrerFilter, setReferrerFilter] = useState('ALL');
+  const [emailModalTab, setEmailModalTab] = useState<'candidate' | 'referrer'>('candidate');
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,11 +138,16 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
       ]);
 
       setMetrics(m);
-      // Filter candidates by level if needed
+      // Filter candidates by level and referrer
       let fetchedCandidates = cRes.candidates || [];
       if (levelFilter !== 'ALL') {
         fetchedCandidates = fetchedCandidates.filter(
           (c) => (c.testLevel || 'easy') === levelFilter
+        );
+      }
+      if (referrerFilter !== 'ALL') {
+        fetchedCandidates = fetchedCandidates.filter(
+          (c) => (c.chunkerCode || 'PILOT100').toUpperCase() === referrerFilter.toUpperCase()
         );
       }
       setCandidates(fetchedCandidates);
@@ -170,7 +176,7 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
     if (isWhitelisted) {
       loadAdminData();
     }
-  }, [isWhitelisted, page, statusFilter, testTypeFilter, levelFilter, search]);
+  }, [isWhitelisted, page, statusFilter, testTypeFilter, levelFilter, referrerFilter, search]);
 
   const handleSaveNotificationSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -616,6 +622,21 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
               <option value="easy">{lang === 'vi' ? 'Level: Dễ' : 'Level: Easy'}</option>
               <option value="hard">{lang === 'vi' ? 'Level: Khó' : 'Level: Hard'}</option>
             </select>
+
+            {/* Referrer Filter */}
+            <select
+              value={referrerFilter}
+              onChange={(e) => setReferrerFilter(e.target.value)}
+              className="px-2.5 py-1.5 border border-[rgba(10,10,10,0.2)] text-[12.5px] text-[#0a0a0a] bg-white cursor-pointer font-mono"
+            >
+              <option value="ALL">{lang === 'vi' ? 'Tất cả người refer' : 'All Referrers'}</option>
+              <option value="PILOT100">PILOT100 (Direct Pilot)</option>
+              {chunkers.filter((c) => c.code !== 'PILOT100').map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} — {c.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -711,8 +732,15 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                     </td>
 
                     {/* Inviter */}
-                    <td className="py-3 pr-3 font-mono text-xs text-[#0a0a0a]/75">
-                      {c.chunkerCode}
+                    <td className="py-3 pr-3">
+                      <div className="flex flex-col">
+                        <span className="font-mono font-bold text-xs text-[#c81e16] bg-red-50/80 px-2 py-0.5 rounded border border-red-200/60 w-fit">
+                          {c.chunkerCode}
+                        </span>
+                        <span className="text-[11.5px] text-[#0a0a0a]/65 truncate max-w-[130px] mt-0.5">
+                          {c.chunkerName || (c.chunkerCode === 'PILOT100' ? (lang === 'vi' ? 'Trực tiếp' : 'Direct') : '')}
+                        </span>
+                      </div>
                     </td>
 
                     {/* Confirmation Email Status & Resend */}
@@ -1073,14 +1101,20 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
                           >
                             <Edit2 className="w-3 h-3 text-slate-700" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteChunker(ch.code, ch.name)}
-                            className="p-1.5 border border-rose-200 hover:border-rose-400 hover:bg-rose-50 text-rose-600 rounded transition-colors cursor-pointer"
-                            title={lang === 'vi' ? 'Xóa Chunkee' : 'Delete Chunkee'}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          {ch.code === 'PILOT100' ? (
+                            <span className="px-2 py-1 text-[10px] font-mono text-slate-400 bg-slate-100 rounded border border-slate-200" title={lang === 'vi' ? 'Mã mặc định hệ thống' : 'System Default'}>
+                              Default
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteChunker(ch.code, ch.name)}
+                              className="p-1.5 border border-rose-200 hover:border-rose-400 hover:bg-rose-50 text-rose-600 rounded transition-colors cursor-pointer"
+                              title={lang === 'vi' ? 'Xóa Chunkee' : 'Delete Chunkee'}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1321,89 +1355,163 @@ export const AdminView: React.FC<Props> = ({ currentUser, lang }) => {
               </button>
             </div>
 
-            {/* Test & Level Controls */}
-            <div className="p-4 bg-white border-b border-[rgba(10,10,10,0.08)] flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#0a0a0a]/70">Bài Test:</span>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTestType('green')}
-                  className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
-                    previewTestType === 'green'
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
-                      : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
-                  }`}
-                >
-                  Green Focus (%c)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTestType('red')}
-                  className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
-                    previewTestType === 'red'
-                      ? 'border-[#c81e16] bg-rose-50 text-[#c81e16]'
-                      : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
-                  }`}
-                >
-                  Red Improv (%r)
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#0a0a0a]/70">Level (Độ khó):</span>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTestLevel('easy')}
-                  className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
-                    previewTestLevel === 'easy'
-                      ? 'border-blue-600 bg-blue-50 text-blue-800'
-                      : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
-                  }`}
-                >
-                  Level Dễ (Foundation)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTestLevel('hard')}
-                  className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
-                    previewTestLevel === 'hard'
-                      ? 'border-[#c81e16] bg-rose-50 text-[#c81e16]'
-                      : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
-                  }`}
-                >
-                  Level Khó (Advanced)
-                </button>
-              </div>
+            {/* Tab Navigation */}
+            <div className="flex border-b border-[rgba(10,10,10,0.12)] bg-slate-100 px-5 pt-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setEmailModalTab('candidate')}
+                className={`pb-2.5 px-4 text-[13px] font-semibold border-b-2 transition-all cursor-pointer ${
+                  emailModalTab === 'candidate'
+                    ? 'border-[#c81e16] text-[#c81e16] bg-white rounded-t shadow-2xs'
+                    : 'border-transparent text-[#0a0a0a]/60 hover:text-[#0a0a0a]'
+                }`}
+              >
+                {lang === 'vi' ? '1. Mẫu Email Gửi Ứng Viên' : '1. Candidate Email Template'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmailModalTab('referrer')}
+                className={`pb-2.5 px-4 text-[13px] font-semibold border-b-2 transition-all cursor-pointer ${
+                  emailModalTab === 'referrer'
+                    ? 'border-[#c81e16] text-[#c81e16] bg-white rounded-t shadow-2xs'
+                    : 'border-transparent text-[#0a0a0a]/60 hover:text-[#0a0a0a]'
+                }`}
+              >
+                {lang === 'vi' ? '2. Mẫu Email Báo Người Giới Thiệu (Chunkee)' : '2. Chunkee Milestone Alert'}
+              </button>
             </div>
 
-            {/* Email Rendered Frame */}
-            <div className="flex-1 overflow-y-auto p-4 bg-slate-100">
-              {(() => {
-                const sampleContent = generateCandidateEmailContent({
-                  candidateId: 'CAND-DEMO-100',
-                  fullName: 'Nguyễn Phương Thảo',
-                  phone: '0988 123 456',
-                  email: 'thao.nguyen@example.com',
-                  testType: previewTestType,
-                  testLevel: previewTestLevel,
-                  preferredSlots: 'Tối ngày trong tuần (19:00 - 21:00)',
-                  chunkerCode: 'NAM2026',
-                  chunkerName: 'Nam Nguyễn',
-                });
-                return (
-                  <div className="space-y-3">
-                    <div className="p-3 bg-white border border-[rgba(10,10,10,0.12)] font-mono text-xs">
-                      <div className="text-[#0a0a0a]/50 text-[11px]">SUBJECT:</div>
-                      <div className="font-bold text-[#0a0a0a] mt-0.5">{sampleContent.subject}</div>
-                    </div>
-                    <div
-                      className="border border-[rgba(10,10,10,0.12)] bg-white overflow-hidden shadow-sm"
-                      dangerouslySetInnerHTML={{ __html: sampleContent.html }}
-                    />
+            {emailModalTab === 'candidate' ? (
+              <>
+                {/* Test & Level Controls */}
+                <div className="p-4 bg-white border-b border-[rgba(10,10,10,0.08)] flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#0a0a0a]/70">Bài Test:</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTestType('green')}
+                      className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
+                        previewTestType === 'green'
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
+                          : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
+                      }`}
+                    >
+                      Green Focus (%c)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTestType('red')}
+                      className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
+                        previewTestType === 'red'
+                          ? 'border-[#c81e16] bg-rose-50 text-[#c81e16]'
+                          : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
+                      }`}
+                    >
+                      Red Improv (%r)
+                    </button>
                   </div>
-                );
-              })()}
-            </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#0a0a0a]/70">Level (Độ khó):</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTestLevel('easy')}
+                      className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
+                        previewTestLevel === 'easy'
+                          ? 'border-blue-600 bg-blue-50 text-blue-800'
+                          : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
+                      }`}
+                    >
+                      Level Dễ (Foundation)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTestLevel('hard')}
+                      className={`px-3 py-1 text-xs font-mono font-semibold border cursor-pointer ${
+                        previewTestLevel === 'hard'
+                          ? 'border-[#c81e16] bg-rose-50 text-[#c81e16]'
+                          : 'border-[rgba(10,10,10,0.15)] text-[#0a0a0a]/70'
+                      }`}
+                    >
+                      Level Khó (Advanced)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Email Rendered Frame */}
+                <div className="flex-1 overflow-y-auto p-4 bg-slate-100">
+                  {(() => {
+                    const sampleContent = generateCandidateEmailContent({
+                      candidateId: 'CAND-DEMO-100',
+                      fullName: 'Nguyễn Phương Thảo',
+                      phone: '0988 123 456',
+                      email: 'thao.nguyen@example.com',
+                      testType: previewTestType,
+                      testLevel: previewTestLevel,
+                      preferredSlots: 'Tối ngày trong tuần (19:00 - 21:00)',
+                      chunkerCode: 'NAM2026',
+                      chunkerName: 'Nam Nguyễn',
+                    });
+                    return (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-white border border-[rgba(10,10,10,0.12)] font-mono text-xs">
+                          <div className="text-[#0a0a0a]/50 text-[11px]">SUBJECT:</div>
+                          <div className="font-bold text-[#0a0a0a] mt-0.5">{sampleContent.subject}</div>
+                        </div>
+                        <div
+                          className="border border-[rgba(10,10,10,0.12)] bg-white overflow-hidden shadow-sm"
+                          dangerouslySetInnerHTML={{ __html: sampleContent.html }}
+                        />
+                      </div>
+                    );
+                  })()}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 bg-slate-100 space-y-4">
+                <div className="p-3 bg-white border border-[rgba(10,10,10,0.12)] font-mono text-xs space-y-2">
+                  <div>
+                    <div className="text-[#0a0a0a]/50 text-[11px]">SUBJECT:</div>
+                    <div className="font-bold text-[#0a0a0a] mt-0.5">
+                      [CHUNKS Alert] Ứng viên mới đăng ký qua mã NAM2026 của bạn!
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-[rgba(10,10,10,0.08)] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[#0a0a0a]/50 text-[11px]">NGƯỜI NHẬN (CHUNKEE): </span>
+                      <span className="text-emerald-700 font-semibold">Lê Hoàng Nam (nam.le@example.com)</span>
+                    </div>
+                    <span className="text-xs bg-red-50 text-[#c81e16] px-2 py-0.5 font-bold rounded">
+                      Tally: +1 referral count
+                    </span>
+                  </div>
+                </div>
+
+                {/* Referral Milestone HTML Frame */}
+                <div className="border border-[rgba(10,10,10,0.12)] bg-white p-6 sm:p-8 shadow-sm font-sans space-y-5">
+                  <div className="text-[11px] font-bold text-[#c81e16] tracking-[0.2em] uppercase">
+                    CHUNKEE REFERRAL · THÔNG BÁO TỰ ĐỘNG
+                  </div>
+                  <h2 className="text-[20px] font-bold text-[#0a0a0a] leading-tight">
+                    Chúc mừng! Đã có ứng viên mới đăng ký qua link của bạn
+                  </h2>
+                  <div className="bg-[#fafafa] p-5 border border-[#f4f4f5] text-[14px] leading-relaxed space-y-3">
+                    <p className="margin: 0;">Xin chào <strong>Lê Hoàng Nam</strong>,</p>
+                    <p>Ứng viên <strong>Nguyễn Phương Thảo</strong> vừa hoàn tất đăng ký giữ chỗ tham gia Mini-Test 21 câu qua mã giới thiệu <strong>NAM2026</strong> của bạn.</p>
+                    <div className="p-4 bg-red-50/70 border border-red-200/60 rounded flex items-center justify-between">
+                      <span className="text-[#0a0a0a] font-medium">Tổng số ứng viên đã đăng ký từ mã của bạn:</span>
+                      <strong className="text-[#c81e16] text-[20px] font-mono">5 lượt</strong>
+                    </div>
+                    <div className="text-xs text-[#0a0a0a]/65 pt-1">
+                      Link giới thiệu của bạn: <code className="text-[#c81e16] font-mono bg-white px-2 py-1 border ml-1">https://chunkstest.web.app/?ref=NAM2026</code>
+                    </div>
+                  </div>
+                  <p className="text-[13px] text-[#71717a]">
+                    Cảm ơn bạn đã đồng hành và lan tỏa phương pháp đánh giá phản xạ CHUNKS!
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Modal Footer */}
             <div className="p-4 bg-white border-t border-[rgba(10,10,10,0.12)] flex items-center justify-between text-xs text-[#0a0a0a]/60">

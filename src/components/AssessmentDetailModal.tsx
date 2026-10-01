@@ -115,7 +115,7 @@ export const AssessmentDetailModal: React.FC<Props> = ({
 
           <div>
             <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 mb-3">
-              {lang === 'vi' ? 'Theo CHUNKS Theory MN107.v2.1' : 'Based on CHUNKS Theory MN107.v2.1'}
+              {lang === 'vi' ? 'Theo Phương Pháp CHUNKS Theory' : 'Based on CHUNKS Theory'}
             </span>
             <ul className="space-y-2 list-disc pl-5 text-[13px] text-[#0a0a0a]/75">
               {(lang === 'vi' ? info.theoryHighlightsVi : info.theoryHighlightsEn).map((highlight) => (

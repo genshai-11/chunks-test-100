@@ -77,6 +77,7 @@ class DatabaseService {
 
   async deleteChunker(code: string): Promise<boolean> {
     const cleanCode = code.trim().toUpperCase();
+    if (cleanCode === 'PILOT100') throw new Error('Cannot delete default PILOT100 account');
     const ref = this.db.collection('chunkers').doc(cleanCode);
     const snap = await ref.get();
     if (!snap.exists) throw new Error('Chunker not found');
@@ -119,9 +120,22 @@ class DatabaseService {
       const newReferralCount = (chunker.get('referralCount') || 0) + 1;
       tx.update(ref, { referralCount: newReferralCount });
       tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_candidate`), { candidateId: candidateRef.id, kind: 'candidate', recipients: [candidate.email], status: 'pending', attempts: 0, nextAttemptAt: now.getTime(), createdAt: now.toISOString() });
-      const recipients = settings.get('notificationEmails');
-      if (settings.get('enabled') === true && Array.isArray(recipients) && recipients.length) {
-        tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_admin`), { candidateId: candidateRef.id, kind: 'admin', recipients, status: 'pending', attempts: 0, nextAttemptAt: now.getTime(), createdAt: now.toISOString() });
+      const rawRecipients = settings.get('notificationEmails');
+      const fallbackRecipients = (process.env.ADMIN_EMAILS || 'le.ntmkh@gmail.com,lucy2511kh@gmail.com')
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      const recipients = Array.isArray(rawRecipients) && rawRecipients.length > 0 ? rawRecipients : fallbackRecipients;
+      if (settings.get('enabled') !== false && recipients.length) {
+        tx.create(db.collection('emailOutbox').doc(`${candidateRef.id}_admin`), {
+          candidateId: candidateRef.id,
+          kind: 'admin',
+          recipients,
+          status: 'pending',
+          attempts: 0,
+          nextAttemptAt: now.getTime(),
+          createdAt: now.toISOString(),
+        });
       }
       const chunkerEmail = chunker.get('email');
       if (typeof chunkerEmail === 'string' && chunkerEmail.includes('@') && code !== 'PILOT100') {

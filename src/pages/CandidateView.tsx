@@ -234,30 +234,30 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               CHUNKS PILOT
             </span>
             <span className="text-[12px] font-mono font-bold text-[#c81e16] block">
-              / MN107.V2.1
+              / PILOT 100
             </span>
           </div>
 
           {/* Right Column (col-span-12 md:col-span-9) */}
           <div className="col-span-12 md:col-span-9 space-y-6">
-            <h1 id="main-hero-title" className="text-[clamp(2.5rem,5.5vw,4.5rem)] leading-[0.98] font-bold tracking-tight text-[#0a0a0a] text-balance">
+            <h1 id="main-hero-title" className="text-[clamp(2.3rem,5vw,4.2rem)] leading-[1.05] font-bold tracking-tight text-[#0a0a0a] text-balance">
               {lang === 'vi' ? (
                 <>
-                  Năng lực phản xạ<span className="text-[#c81e16]">,</span> thử thách có ý thức
+                  Đăng ký Mini-Test 21 câu<span className="text-[#c81e16]">:</span> Khảo sát phản xạ 1-on-1
                   <span className="text-[#c81e16]">.</span>
                 </>
               ) : (
                 <>
-                  Conscious performance<span className="text-[#c81e16]">,</span> tested
+                  Register for 21-Question Mini-Test<span className="text-[#c81e16]">:</span> Live 1-on-1 Assessment
                   <span className="text-[#c81e16]">.</span>
                 </>
               )}
             </h1>
 
-            <p className="max-w-[50ch] text-[16px] md:text-[17.5px] text-[#0a0a0a]/75 leading-relaxed font-light">
+            <p className="max-w-[52ch] text-[16px] md:text-[17.5px] text-[#0a0a0a]/75 leading-relaxed font-light">
               {lang === 'vi'
-                ? 'Khám phá cách bạn duy trì sự chú ý hoặc ứng biến khi nói dưới áp lực qua Chuyển động, Âm thanh và Cảm xúc (MSE). Buổi đánh giá trực tiếp 1-on-1, 15-20 phút cùng Chunker-in-Charge. Chương trình thử nghiệm hướng tới 100 lượt đăng ký đủ điều kiện.'
-                : 'Explore how you sustain attention or improvise while speaking under pressure through Motion, Sound and Emotion (MSE). A live, 15-20 minute 1-on-1 assessment with a Chunker-in-Charge. This pilot aims for 100 qualified registrations.'}
+                ? 'Dành cho 100 ứng viên tham gia khảo sát trực tiếp cùng Chunker-in-Charge. Không cần học thuộc hay chuẩn bị bài mẫu; quan sát phản xạ Thân – Khẩu – Ý (MSE) tự nhiên trong 15–20 phút.'
+                : 'Open to 100 candidates for live 1-on-1 evaluation with a Chunker-in-Charge. No rote scripts needed; observing authentic Motion–Sound–Emotion reflexes in 15–20 minutes.'}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -490,8 +490,16 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
               <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block">
                 {lang === 'vi' ? 'BƯỚC 01 / ĐĂNG KÝ' : 'STEP 01 / REGISTRATION'}
               </span>
-              <h2 className="text-[26px] sm:text-[30px] font-semibold tracking-[-0.03em] leading-tight text-[#0a0a0a] mt-2">
-                {lang === 'vi' ? 'Thông tin đăng ký.' : 'Registration details.'}
+              <h2 className="text-[26px] sm:text-[30px] font-bold tracking-[-0.03em] leading-tight text-[#0a0a0a] mt-2">
+                {lang === 'vi' ? (
+                  <>
+                    Thông tin <span className="text-[#c81e16]">đăng ký bài test</span>.
+                  </>
+                ) : (
+                  <>
+                    Candidate <span className="text-[#c81e16]">Registration</span>.
+                  </>
+                )}
               </h2>
               <p className="text-[14.5px] text-[#0a0a0a]/65 font-light leading-relaxed mt-3">
                 {lang === 'vi'
@@ -532,7 +540,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
           {/* Right Column (col-span-8): Minimal High-Conversion Form */}
           <div className="col-span-12 md:col-span-8">
-            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-8 border border-[rgba(10,10,10,0.12)] rounded-[2px] shadow-2xs">
+            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-8 border-2 border-[rgba(10,10,10,0.18)] rounded-[2px] shadow-sm">
               {/* Bot Trap */}
               <input
                 type="text"
@@ -774,14 +782,9 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                       }`}>
                         <CheckCircle2 size={16} />
                       </div>
-                      <div className="min-w-0">
-                        <strong className="block text-[14px] font-bold text-[#0a0a0a] truncate">
-                          {lang === 'vi' ? 'Tiêu chuẩn (Vừa sức)' : 'Standard (Comfortable)'}
-                        </strong>
-                        <span className="block text-[11px] font-mono text-[#0a0a0a]/60">
-                          {lang === 'vi' ? 'Nhịp độ đàm thoại tự nhiên' : 'Natural conversational pace'}
-                        </span>
-                      </div>
+                      <strong className="text-[14.5px] font-bold text-[#0a0a0a]">
+                        {lang === 'vi' ? 'Cơ bản' : 'Basic'}
+                      </strong>
                     </div>
                     <div
                       className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
@@ -822,14 +825,9 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                       }`}>
                         <Zap size={16} />
                       </div>
-                      <div className="min-w-0">
-                        <strong className="block text-[14px] font-bold text-[#0a0a0a] truncate">
-                          {lang === 'vi' ? 'Nâng cao (Thử thách)' : 'Advanced (Challenging)'}
-                        </strong>
-                        <span className="block text-[11px] font-mono text-[#0a0a0a]/60">
-                          {lang === 'vi' ? 'Tăng áp lực & phản xạ nhanh' : 'Fast-paced reflex pressure'}
-                        </span>
-                      </div>
+                      <strong className="text-[14.5px] font-bold text-[#0a0a0a]">
+                        {lang === 'vi' ? 'Nâng cao' : 'Advanced'}
+                      </strong>
                     </div>
                     <div
                       className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${

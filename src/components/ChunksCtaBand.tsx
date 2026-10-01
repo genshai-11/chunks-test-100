@@ -78,7 +78,7 @@ export const ChunksCtaBand: React.FC<Props> = ({ onRegister, lang }) => {
           <div className="md:col-span-3 space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-red-50 border border-red-200/80 text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
               <ShieldCheck size={13} />
-              <span>MN107.V2.1 · MSE</span>
+              <span>CHUNKS · MSE</span>
             </div>
             <span className="text-[12px] font-mono text-[#0a0a0a]/50 block">
               CONSCIOUS PERFORMANCE
@@ -90,8 +90,10 @@ export const ChunksCtaBand: React.FC<Props> = ({ onRegister, lang }) => {
               id="mse-heading"
               className="text-[clamp(22px,2.8vw,34px)] leading-tight tracking-[-0.03em] font-bold text-[#0a0a0a]"
             >
-              <span>{lang === 'vi' ? 'Ba nền tảng phản xạ ngôn ngữ (MSE): ' : 'Three Dimensions of Spoken Response (MSE): '}</span>
-              <span className="text-[#c81e16]">
+              <span className="block text-[#0a0a0a]">
+                {lang === 'vi' ? 'Ba nền tảng phản xạ ngôn ngữ (MSE):' : 'Three Dimensions of Spoken Response (MSE):'}
+              </span>
+              <span className="block mt-1.5 text-[#c81e16]">
                 {lang === 'vi' ? 'Chuyển động · Âm thanh · Cảm xúc' : 'Motion · Sound · Emotion'}
               </span>
             </h2>
