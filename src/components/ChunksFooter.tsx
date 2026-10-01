@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpRight, ArrowUp } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { motion, useReducedMotion, Variants } from 'motion/react';
 
 interface Props {
@@ -60,46 +60,12 @@ export const ChunksFooter: React.FC<Props> = ({
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.08 }}
-        className="chunks-shell chunks-reveal-shell pt-16"
+        className="chunks-shell chunks-reveal-shell pt-8 md:pt-12"
       >
-        {/* Top CTA Banner */}
-        <motion.div variants={itemVariants} className="chunks-footer-grid pb-16 md:pb-[68px]">
-          <p className="chunks-eyebrow md:col-span-3 text-[var(--chunks-accent-soft)]">
-            CHUNKS / NEXT STEP
-          </p>
-          <div className="col-span-2 md:col-span-9">
-            <h2 className="max-w-[19ch] text-[clamp(34px,4.8vw,64px)] font-semibold tracking-[-0.04em] leading-[1.1]">
-              {lang === 'vi' ? (
-                <>
-                  Đừng đoán phản xạ.
-                  <br />
-                  <span className="text-[var(--chunks-accent-soft)]">Hãy quan sát nó.</span>
-                </>
-              ) : (
-                <>
-                  Don't guess your response.
-                  <br />
-                  <span className="text-[var(--chunks-accent-soft)]">Observe it.</span>
-                </>
-              )}
-            </h2>
-            <motion.button
-              type="button"
-              onClick={scrollToForm}
-              whileHover={reduceMotion ? {} : { scale: 1.03 }}
-              whileTap={reduceMotion ? {} : { scale: 0.97 }}
-              className="mt-8 inline-flex items-center gap-3 rounded-full bg-white text-black hover:bg-[var(--chunks-accent-hover)] hover:text-white px-6 py-3.5 text-[13.5px] font-semibold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white shadow-sm"
-            >
-              <span>{lang === 'vi' ? 'Tìm hiểu cách đăng ký' : 'How to register'}</span>
-              <ArrowUpRight size={16} aria-hidden="true" />
-            </motion.button>
-          </div>
-        </motion.div>
-
         {/* 3-Column Navigation Grid */}
         <motion.div
           variants={itemVariants}
-          className="chunks-footer-grid border-t chunks-footer-rule py-10 md:pb-14 text-[13px]"
+          className="chunks-footer-grid py-10 md:pb-14 text-[13px]"
         >
           {/* Brand Block */}
           <div className="col-span-2 md:col-span-5">

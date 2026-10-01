@@ -5,7 +5,12 @@ import {
   MapPin,
   Clock,
   Users,
+  Sparkles,
+  Compass,
+  Activity,
+  ShieldCheck,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface Props {
   lang: 'vi' | 'en';
@@ -16,71 +21,140 @@ export const AboutChunksView: React.FC<Props> = ({ lang, onNavigateToBooking }) 
   return (
     <div className="w-full text-[#0a0a0a]">
       {/* 1. Masthead / Hero */}
-      <section className="w-full hairline-b bg-white">
-        <div className="chunks-shell chunks-reveal-shell grid grid-cols-1 md:grid-cols-12 gap-6 py-[72px] md:py-[110px]">
-          <div className="col-span-12 md:col-span-3">
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.25em] text-[#c81e16] block">
-              CHUNKS THEORY · MN107.V2.1
-            </span>
-            <span className="text-[12px] font-mono text-[#0a0a0a]/50 mt-1 block">
-              CONSCIOUS PERFORMANCE
-            </span>
-          </div>
+      <section className="w-full hairline-b bg-gradient-to-b from-slate-50/60 to-white">
+        <div className="chunks-shell chunks-reveal-shell py-10 md:py-16">
+          {/* Top Metadata Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-[rgba(10,10,10,0.1)]">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[2px] bg-red-50 border border-red-200/80 text-[10.5px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
+                <ShieldCheck size={13} />
+                <span>CHUNKS THEORY · MN107.V2.1</span>
+              </span>
+              <span className="hidden sm:inline-block text-[12px] font-mono text-[#0a0a0a]/50">
+                CONSCIOUS PERFORMANCE
+              </span>
+            </div>
 
-          <div className="col-span-12 md:col-span-9 space-y-6">
-            <h1 className="text-[clamp(2.4rem,5.5vw,4.5rem)] leading-[0.98] font-bold tracking-tight text-[#0a0a0a] text-balance">
-              {lang === 'vi' ? (
-                <>
-                  Cải thiện 3 nền tảng ngôn ngữ: <br />
-                  <span className="text-[#0a0a0a]/85">Tập Trung</span> ·{' '}
-                  <span className="text-[#0a0a0a]/85">Ứng Biến</span> ·{' '}
-                  <span className="text-[#c81e16]">Quan Sát</span>.
-                </>
-              ) : (
-                <>
-                  Three core pillars of language: <br />
-                  <span className="text-[#0a0a0a]/85">Focus</span> ·{' '}
-                  <span className="text-[#0a0a0a]/85">Improv</span> ·{' '}
-                  <span className="text-[#c81e16]">Observation</span>.
-                </>
-              )}
-            </h1>
-
-            <p className="max-w-[54ch] text-[16px] md:text-[17.5px] text-[#0a0a0a]/75 leading-relaxed font-light">
-              {lang === 'vi'
-                ? 'Từ 3 nghịch lý ngôn ngữ đến giả thuyết về cộng hưởng Thân – Khẩu – Ý (Motion – Sound – Emotion). CHUNKS khám phá cách ngôn ngữ cơ thể, cao độ âm thanh và cảm xúc tác động trực tiếp lên khả năng phản xạ trong thời gian thực.'
-                : 'From three linguistic paradoxes to real-time resonance across Motion, Sound, and Emotion (MSE). CHUNKS explores how body language, vocal resonance, and intention drive authentic communication under pressure.'}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onNavigateToBooking}
-                className="bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[14px] font-bold rounded-full px-7 py-3.5 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md"
-              >
-                <span>{lang === 'vi' ? 'Đăng ký Mini-Test 20 phút' : 'Book 20m Mini-Test'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
+            <div className="flex items-center gap-2">
               <a
                 href="https://the-chunks.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full border border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a] text-[13px] font-medium text-[#0a0a0a] transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] border border-[rgba(10,10,10,0.14)] hover:border-[#0a0a0a] bg-white text-[12px] font-medium text-[#0a0a0a] transition-colors shadow-2xs"
               >
                 <span>the-chunks.com</span>
-                <ExternalLink className="w-3.5 h-3.5 text-[#c81e16]" />
+                <ExternalLink className="w-3 h-3 text-[#c81e16]" />
               </a>
-
               <a
                 href="https://chunkstheory.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full border border-[rgba(10,10,10,0.18)] hover:border-[#0a0a0a] text-[13px] font-medium text-[#0a0a0a] transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] border border-[rgba(10,10,10,0.14)] hover:border-[#0a0a0a] bg-white text-[12px] font-medium text-[#0a0a0a] transition-colors shadow-2xs"
               >
                 <span>chunkstheory.com</span>
-                <ExternalLink className="w-3.5 h-3.5 text-[#c81e16]" />
+                <ExternalLink className="w-3 h-3 text-[#c81e16]" />
               </a>
+            </div>
+          </div>
+
+          {/* 2-Column Banner Body */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-8">
+            {/* Main Headline Column */}
+            <div className="lg:col-span-7 space-y-5">
+              <h1 className="text-[clamp(2.2rem,4.8vw,4rem)] leading-[1.02] font-bold tracking-tight text-[#0a0a0a]">
+                {lang === 'vi' ? (
+                  <>
+                    Nền tảng phản xạ ngôn ngữ:{' '}
+                    <span className="text-[#0a0a0a]/80 font-medium">Tập Trung</span> ·{' '}
+                    <span className="text-[#0a0a0a]/80 font-medium">Ứng Biến</span> ·{' '}
+                    <span className="text-[#c81e16]">Quan Sát</span>
+                  </>
+                ) : (
+                  <>
+                    Core Pillars of Spoken Reflex:{' '}
+                    <span className="text-[#0a0a0a]/80 font-medium">Focus</span> ·{' '}
+                    <span className="text-[#0a0a0a]/80 font-medium">Improv</span> ·{' '}
+                    <span className="text-[#c81e16]">Observation</span>
+                  </>
+                )}
+              </h1>
+
+              <p className="max-w-[52ch] text-[15px] sm:text-[16.5px] text-[#0a0a0a]/75 leading-relaxed font-light">
+                {lang === 'vi'
+                  ? 'Từ 3 nghịch lý ngôn ngữ đến giả thuyết về cộng hưởng Thân – Khẩu – Ý (MSE). CHUNKS phân tích cách ngôn ngữ cơ thể, cao độ âm thanh và tâm thế tác động trực tiếp lên khả năng phản xạ trong thời gian thực khi không có kịch bản học thuộc.'
+                  : 'From three linguistic paradoxes to real-time resonance across Motion, Sound, and Emotion (MSE). CHUNKS investigates how body kinematics, acoustic pitch, and communicative intent govern live spoken reflexes without scripts.'}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onNavigateToBooking}
+                  className="bg-[#c81e16] hover:bg-[#ff3b30] text-white text-[14px] font-bold rounded-full px-6 py-3.5 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                >
+                  <span>{lang === 'vi' ? 'Đăng ký Mini-Test 20 phút' : 'Book 20m Mini-Test'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <div className="text-[12.5px] font-mono text-[#0a0a0a]/60 pl-2">
+                  {lang === 'vi' ? '• 21 câu ngắn · 1-on-1 trực tiếp cùng CiC' : '• 21 short prompts · 1-on-1 with CiC'}
+                </div>
+              </div>
+            </div>
+
+            {/* Pillar Snapshot Specimen Card */}
+            <div className="lg:col-span-5 bg-white border border-[rgba(10,10,10,0.12)] p-6 rounded-[2px] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[rgba(10,10,10,0.08)] pb-3">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0a0a0a]/70">
+                  {lang === 'vi' ? '3 NHÁNH ĐÁNH GIÁ CHỦ LỰC' : '3 CORE ASSESSMENT STREAMS'}
+                </span>
+                <span className="text-[11px] font-mono text-[#c81e16] bg-red-50 px-2 py-0.5 rounded-[2px]">
+                  SPECIAL MN107
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-3 rounded-[2px] bg-emerald-50/50 border border-emerald-200/50 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                    %c
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="block text-[13px] font-bold text-[#0a0a0a]">
+                      {lang === 'vi' ? 'Tập Trung (Focus Stream)' : 'Focus Stream (%c)'}
+                    </strong>
+                    <span className="block text-[11.5px] text-[#0a0a0a]/70 font-light mt-0.5">
+                      {lang === 'vi' ? 'Giữ vững sự chú ý và trường âm thanh trong phòng test.' : 'Sustaining attention and acoustic projection under friction.'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-[2px] bg-amber-50/50 border border-amber-200/50 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                    %r
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="block text-[13px] font-bold text-[#0a0a0a]">
+                      {lang === 'vi' ? 'Ứng Biến (Improv Stream)' : 'Improv Stream (%r)'}
+                    </strong>
+                    <span className="block text-[11.5px] text-[#0a0a0a]/70 font-light mt-0.5">
+                      {lang === 'vi' ? 'Xoay xở linh hoạt với gợi ý mới mà không phụ thuộc kịch bản.' : 'Agile improvisation with unscripted prompts.'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-[2px] bg-rose-50/50 border border-rose-200/50 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5">
+                    %o
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="block text-[13px] font-bold text-[#0a0a0a]">
+                      {lang === 'vi' ? 'Quan Sát (Observation)' : 'Observation (%o)'}
+                    </strong>
+                    <span className="block text-[11.5px] text-[#0a0a0a]/70 font-light mt-0.5">
+                      {lang === 'vi' ? 'Nhận diện phản xạ Thân – Khẩu – Ý (MSE) nguyên bản.' : 'Observing authentic Motion–Sound–Emotion reflexes.'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

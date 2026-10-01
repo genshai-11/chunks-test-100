@@ -5,6 +5,11 @@ import {
   QrCode,
   ExternalLink,
   ArrowUpRight,
+  Sparkles,
+  Timer,
+  UserCheck,
+  CheckCircle2,
+  Zap,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { AgeRange } from '../types';
@@ -221,7 +226,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="chunks-shell chunks-reveal-shell grid grid-cols-1 md:grid-cols-12 gap-6 py-[72px] md:py-[120px]"
+          className="chunks-shell chunks-reveal-shell grid grid-cols-1 md:grid-cols-12 gap-6 py-12 md:py-16"
         >
           {/* Left Column (col-span-12 md:col-span-3) */}
           <div className="col-span-12 md:col-span-3 mb-4 md:mb-0 space-y-1">
@@ -306,17 +311,17 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
         <div className="chunks-shell">
         {/* Introductory Banner: About CHUNKS & Mini-Test format */}
         <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="chunks-booking-banner mb-8 p-5 sm:p-6 space-y-3.5 bg-slate-50/80 border border-[rgba(10,10,10,0.14)]"
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="chunks-booking-banner mb-8 p-5 sm:p-7 space-y-4 bg-white border border-[rgba(10,10,10,0.12)] border-l-4 border-l-[#c81e16] rounded-[2px] shadow-xs"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[rgba(10,10,10,0.08)]">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="CHUNKS" className="w-[32px] h-[32px] object-contain shrink-0" />
+              <img src="/logo.png" alt="CHUNKS" className="w-[30px] h-[30px] object-contain shrink-0" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#c81e16]">
-                {lang === 'vi' ? 'CHUNKS TEST 100 · BUỔI KHẢO SÁT TRỰC TIẾP' : 'CHUNKS TEST 100 · IN-PERSON ASSESSMENT'}
+                {lang === 'vi' ? 'CHUNKS TEST 100 · KHẢO SÁT PHẢN XẠ TRỰC TIẾP' : 'CHUNKS TEST 100 · LIVE IN-PERSON ASSESSMENT'}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
@@ -324,7 +329,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 href="https://the-chunks.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-[rgba(10,10,10,0.15)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-[rgba(10,10,10,0.14)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors rounded-[2px]"
               >
                 <span>the-chunks.com</span>
                 <ExternalLink className="w-3 h-3 text-[#c81e16]" />
@@ -333,21 +338,67 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 href="https://chunkstheory.com/chunks-theory-2026-7-pages/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-[rgba(10,10,10,0.15)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-[rgba(10,10,10,0.14)] text-[#0a0a0a] hover:border-[#c81e16] transition-colors rounded-[2px]"
               >
                 <span>chunkstheory.com</span>
                 <ExternalLink className="w-3 h-3 text-[#c81e16]" />
               </a>
             </div>
           </div>
-          <h2 className="text-[20px] sm:text-[24px] font-semibold tracking-tight leading-snug text-[#0a0a0a]">
-            {lang === 'vi' ? 'Không cần học trước. Hãy đến và nói như bạn thường nói.' : 'No need to rehearse. Speak just as you normally do.'}
+
+          <h2 className="text-[20px] sm:text-[24px] font-bold tracking-tight leading-snug text-[#0a0a0a]">
+            {lang === 'vi' ? 'Không cần học tủ. Hãy đến và nói như bạn thường nói.' : 'No need to rehearse. Speak just as you normally do.'}
           </h2>
-          <p className="text-[13.5px] sm:text-[14px] text-[#0a0a0a]/75 leading-relaxed max-w-3xl font-normal">
+
+          <p className="text-[14px] text-[#0a0a0a]/75 leading-relaxed max-w-3xl font-light">
             {lang === 'vi'
-              ? 'Mini-Test 21 câu ngắn (15–20 phút) trực tiếp 1-on-1 cùng Chunker-in-Charge là nơi bạn thả lỏng để tự nhìn thấy phản xạ Thân – Khẩu – Ý (MSE) tự nhiên của mình khi áp lực tăng dần mà không còn kịch bản chuẩn bị sẵn.'
-              : 'A concise 21-question Mini-Test (15–20 min) 1-on-1 with a CiC observing your natural Motion–Sound–Emotion (MSE) speech reflexes when rote scripts are stripped away.'}
+              ? 'Bài khảo sát Mini-Test 21 câu giúp bạn và chuyên viên Chunker-in-Charge (CiC) cùng nhận diện nhịp thở, độ mở khẩu hình và phản xạ Thân – Khẩu – Ý (MSE) thực tế khi không có kịch bản chuẩn bị sẵn.'
+              : 'A compact 21-question Mini-Test designed to reveal your genuine Motion–Sound–Emotion (MSE) speech reflexes in an open 1-on-1 dialogue, free from artificial scoring anxiety.'}
           </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="flex items-start gap-2.5 p-3 rounded-[2px] bg-slate-50/80 border border-[rgba(10,10,10,0.08)]">
+              <div className="w-7 h-7 rounded-full bg-red-50 border border-red-200/60 flex items-center justify-center shrink-0 text-[#c81e16] mt-0.5">
+                <Timer size={14} />
+              </div>
+              <div className="min-w-0">
+                <strong className="block text-[12.5px] font-semibold text-[#0a0a0a] leading-tight">
+                  {lang === 'vi' ? '21 câu ngắn · 15–20m' : '21 short prompts · 15–20m'}
+                </strong>
+                <span className="block text-[11.5px] text-[#0a0a0a]/65 font-light leading-snug mt-0.5">
+                  {lang === 'vi' ? 'Tập trung phản xạ tức thì, không kiểm tra ngữ pháp hàn lâm.' : 'Focus on live reflexes, no grammar drills.'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-[2px] bg-slate-50/80 border border-[rgba(10,10,10,0.08)]">
+              <div className="w-7 h-7 rounded-full bg-red-50 border border-red-200/60 flex items-center justify-center shrink-0 text-[#c81e16] mt-0.5">
+                <UserCheck size={14} />
+              </div>
+              <div className="min-w-0">
+                <strong className="block text-[12.5px] font-semibold text-[#0a0a0a] leading-tight">
+                  {lang === 'vi' ? '1-on-1 cùng CiC' : '1-on-1 with CiC'}
+                </strong>
+                <span className="block text-[11.5px] text-[#0a0a0a]/65 font-light leading-snug mt-0.5">
+                  {lang === 'vi' ? 'Trực tiếp tại phòng test tiêu chuẩn, quan sát nhịp nói.' : 'Face-to-face in a standard room, observing speech rhythm.'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-[2px] bg-slate-50/80 border border-[rgba(10,10,10,0.08)]">
+              <div className="w-7 h-7 rounded-full bg-red-50 border border-red-200/60 flex items-center justify-center shrink-0 text-[#c81e16] mt-0.5">
+                <Sparkles size={14} />
+              </div>
+              <div className="min-w-0">
+                <strong className="block text-[12.5px] font-semibold text-[#0a0a0a] leading-tight">
+                  {lang === 'vi' ? 'Không cần học tủ' : 'Zero scripts needed'}
+                </strong>
+                <span className="block text-[11.5px] text-[#0a0a0a]/65 font-light leading-snug mt-0.5">
+                  {lang === 'vi' ? 'Thả lỏng tự nhiên; ghi nhận phản xạ nguyên bản của bạn.' : 'Arrive relaxed to record your authentic baseline.'}
+                </span>
+              </div>
+            </div>
+          </div>
         </motion.div>
         {Boolean(referralCode.trim() && isCodeValid && inviterName) && (
           <div className="mb-10 p-5 sm:p-6 border border-[rgba(10,10,10,0.14)] bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -481,7 +532,7 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
 
           {/* Right Column (col-span-8): Minimal High-Conversion Form */}
           <div className="col-span-12 md:col-span-8">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-8 border border-[rgba(10,10,10,0.12)] rounded-[2px] shadow-2xs">
               {/* Bot Trap */}
               <input
                 type="text"
@@ -675,17 +726,27 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                 </div>
               </div>
 
-              {/* 02. MỨC ĐỘ BÀI TEST (ĐỘ KHÓ) */}
+              {/* 02. ĐỀ XUẤT ĐỘ KHÓ BÀI TEST */}
               <div className="space-y-3" id="field-testLevel">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60 block pb-1 border-b border-[rgba(10,10,10,0.14)]">
-                  02. {lang === 'vi' ? 'MỨC ĐỘ BÀI TEST (ĐỘ KHÓ)' : 'TEST LEVEL (DIFFICULTY)'}
-                </span>
+                <div className="flex items-center justify-between pb-1 border-b border-[rgba(10,10,10,0.14)]">
+                  <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[#0a0a0a]/60">
+                    02. {lang === 'vi' ? 'ĐỀ XUẤT ĐỘ KHÓ BÀI TEST' : 'SUGGESTED TEST DIFFICULTY'}
+                  </span>
+                  <span className="text-[11px] font-mono text-[#0a0a0a]/50">
+                    {lang === 'vi' ? 'Chọn 1 mức độ' : 'Select 1 level'}
+                  </span>
+                </div>
+
+                <p className="text-[13px] text-[#0a0a0a]/75 font-medium">
+                  {lang === 'vi' ? 'Bạn muốn đề xuất độ khó bài test như thế nào?' : 'How would you like to set your test difficulty?'}
+                </p>
+
                 <div
                   role="radiogroup"
-                  aria-label={lang === 'vi' ? 'Mức độ bài test (Độ khó)' : 'Test level (Difficulty)'}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1"
+                  aria-label={lang === 'vi' ? 'Mức độ bài test' : 'Test difficulty level'}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1"
                 >
-                  {/* Option 1: Cơ bản (Dễ) */}
+                  {/* Option 1: Tiêu chuẩn (Vừa sức) */}
                   <div
                     role="radio"
                     aria-checked={testLevel === 'easy'}
@@ -701,46 +762,39 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                         clearFieldError('testLevel');
                       }
                     }}
-                    className={`p-4 border cursor-pointer select-none transition-all rounded-[2px] flex flex-col justify-between ${
+                    className={`p-3.5 border cursor-pointer select-none transition-all rounded-[2px] flex items-center justify-between gap-3 ${
                       testLevel === 'easy'
                         ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a] shadow-xs'
                         : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/50'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span
-                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-semibold px-2 py-0.5 rounded-[2px] transition-colors ${
-                            testLevel === 'easy'
-                              ? 'bg-[#0a0a0a] text-white'
-                              : 'bg-slate-100 text-[#0a0a0a]/60'
-                          }`}
-                        >
-                          {lang === 'vi' ? 'TIÊU CHUẨN' : 'STANDARD'}
-                        </span>
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                            testLevel === 'easy'
-                              ? 'border-[#0a0a0a] bg-[#0a0a0a]'
-                              : 'border-[rgba(10,10,10,0.3)] bg-white'
-                          }`}
-                        >
-                          {testLevel === 'easy' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                        testLevel === 'easy' ? 'bg-[#0a0a0a] text-white' : 'bg-slate-100 text-[#0a0a0a]/60'
+                      }`}>
+                        <CheckCircle2 size={16} />
                       </div>
-
-                      <h3 className="text-[16px] font-bold tracking-tight text-[#0a0a0a]">
-                        {lang === 'vi' ? 'Cơ bản (Foundation)' : 'Foundation (Standard)'}
-                      </h3>
-                      <p className="text-[13px] text-[#0a0a0a]/70 mt-1 font-light leading-relaxed">
-                        {lang === 'vi'
-                          ? 'Nhịp độ vừa phải · Làm quen và quan sát phản xạ tự nhiên cùng CiC.'
-                          : 'Moderate pace · Natural reflex acclimatization with CiC.'}
-                      </p>
+                      <div className="min-w-0">
+                        <strong className="block text-[14px] font-bold text-[#0a0a0a] truncate">
+                          {lang === 'vi' ? 'Tiêu chuẩn (Vừa sức)' : 'Standard (Comfortable)'}
+                        </strong>
+                        <span className="block text-[11px] font-mono text-[#0a0a0a]/60">
+                          {lang === 'vi' ? 'Nhịp độ đàm thoại tự nhiên' : 'Natural conversational pace'}
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                        testLevel === 'easy'
+                          ? 'border-[#0a0a0a] bg-[#0a0a0a]'
+                          : 'border-[rgba(10,10,10,0.3)] bg-white'
+                      }`}
+                    >
+                      {testLevel === 'easy' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                   </div>
 
-                  {/* Option 2: Nâng cao (Khó) */}
+                  {/* Option 2: Nâng cao (Thử thách) */}
                   <div
                     role="radio"
                     aria-checked={testLevel === 'hard'}
@@ -756,57 +810,51 @@ export const CandidateView: React.FC<Props> = ({ initialReferralCode, lang, onOp
                         clearFieldError('testLevel');
                       }
                     }}
-                    className={`p-4 border cursor-pointer select-none transition-all rounded-[2px] flex flex-col justify-between ${
+                    className={`p-3.5 border cursor-pointer select-none transition-all rounded-[2px] flex items-center justify-between gap-3 ${
                       testLevel === 'hard'
-                        ? 'border-[#0a0a0a] bg-slate-50 ring-1 ring-[#0a0a0a] shadow-xs'
+                        ? 'border-[#c81e16] bg-rose-50/40 ring-1 ring-[#c81e16] shadow-xs'
                         : 'border-[rgba(10,10,10,0.16)] bg-white hover:border-[#0a0a0a]/50'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span
-                          className={`text-[10px] font-mono uppercase tracking-[0.2em] font-semibold px-2 py-0.5 rounded-[2px] transition-colors ${
-                            testLevel === 'hard'
-                              ? 'bg-[#c81e16] text-white'
-                              : 'bg-rose-50 text-[#c81e16]'
-                          }`}
-                        >
-                          {lang === 'vi' ? 'ÁP LỰC CAO' : 'INTENSIVE'}
-                        </span>
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                            testLevel === 'hard'
-                              ? 'border-[#c81e16] bg-[#c81e16]'
-                              : 'border-[rgba(10,10,10,0.3)] bg-white'
-                          }`}
-                        >
-                          {testLevel === 'hard' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                        testLevel === 'hard' ? 'bg-[#c81e16] text-white' : 'bg-rose-50 text-[#c81e16]'
+                      }`}>
+                        <Zap size={16} />
                       </div>
-
-                      <h3 className="text-[16px] font-bold tracking-tight text-[#0a0a0a]">
-                        {lang === 'vi' ? 'Thử thách (Advanced)' : 'Advanced (Intensive)'}
-                      </h3>
-                      <p className="text-[13px] text-[#0a0a0a]/70 mt-1 font-light leading-relaxed">
-                        {lang === 'vi'
-                          ? 'Nhịp độ dồn dập · Tăng tốc độ và ma sát phản xạ dưới áp lực cao.'
-                          : 'Rapid pace · Heightened reflex friction under elevated pressure.'}
-                      </p>
+                      <div className="min-w-0">
+                        <strong className="block text-[14px] font-bold text-[#0a0a0a] truncate">
+                          {lang === 'vi' ? 'Nâng cao (Thử thách)' : 'Advanced (Challenging)'}
+                        </strong>
+                        <span className="block text-[11px] font-mono text-[#0a0a0a]/60">
+                          {lang === 'vi' ? 'Tăng áp lực & phản xạ nhanh' : 'Fast-paced reflex pressure'}
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                        testLevel === 'hard'
+                          ? 'border-[#c81e16] bg-[#c81e16]'
+                          : 'border-[rgba(10,10,10,0.3)] bg-white'
+                      }`}
+                    >
+                      {testLevel === 'hard' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                   </div>
                 </div>
+
                 {fieldErrors.testLevel && (
                   <p className="text-[12px] text-[#c81e16] mt-1 flex items-center gap-1 font-mono">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>{fieldErrors.testLevel}</span>
                   </p>
                 )}
-                <p className="text-[12.5px] text-[#0a0a0a]/70 flex items-center gap-1.5 mt-2.5">
+                <p className="text-[12px] text-[#0a0a0a]/65 flex items-center gap-1.5 mt-2">
                   <span>💡</span>
                   <span>
                     {lang === 'vi'
-                      ? 'Chuyên viên CiC sẽ linh hoạt điều chỉnh theo nhịp nói và phản xạ thực tế của bạn.'
-                      : 'The CiC specialist will flexibly adapt to your actual speech rhythm and reflex.'}
+                      ? 'CiC sẽ linh hoạt điều chỉnh phù hợp với nhịp phản xạ thực tế trong phòng test.'
+                      : 'CiC will flexibly calibrate to match your live conversational rhythm.'}
                   </span>
                 </p>
               </div>
